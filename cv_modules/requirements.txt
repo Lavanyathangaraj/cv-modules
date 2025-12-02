@@ -1,7 +1,0 @@
-Flask
-gunicorn             # Mandatory for production hosting
-opencv-python
-numpy
-scipy
-werkzeug             # Flask dependency
-mediapipe
