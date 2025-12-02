@@ -1,0 +1,218 @@
+import cv2
+import numpy as np
+import time
+from typing import Dict, List, Any, Tuple
+from scipy.signal import convolve2d
+from numpy.fft import fft2, ifft2 
+from pathlib import Path
+from .utils import resize_for_web, rotate_image 
+# NOTE: The resize_for_web helper remains necessary for the Filter Simulation tab.
+
+# Base directory (C:\computerVision\cv_modules)
+BASE_DIR = Path(__file__).resolve().parent
+
+# Template storage: Key is object name (filename stem), Value is the loaded template image
+TEMPLATE_DATABASE: Dict[str, np.ndarray] = {}
+# CRITICAL PATH: This path must match your folder structure
+TEMPLATE_FOLDER = BASE_DIR / "images" / "module2" / "objectDetection" / "templates"
+
+
+def create_gaussian_kernel(sigma: float) -> np.ndarray:
+    """Creates a 2D Gaussian kernel using cv2 function."""
+    sigma = float(sigma)
+    if sigma <= 0:
+        return np.array([[1.0]])
+    
+    kernel_size = 2 * int(3 * sigma) + 1
+    g = cv2.getGaussianKernel(kernel_size, sigma)
+    gaussian_kernel = g @ g.T
+    return gaussian_kernel
+
+
+# --- Module 2: Image Filter Simulation Logic (No Change) ---
+
+def process_image_filter(img_bgr: np.ndarray, sigma: float, K: float) -> Dict[str, np.ndarray]:
+    """Applies Gaussian blur and Wiener deconvolution using Fourier Transform."""
+    MAX_PROCESS_DIM = 400
+    
+    processed_img = resize_for_web(img_bgr, MAX_PROCESS_DIM)
+    
+    original_float = processed_img.astype(np.float64) / 255.0
+    m, n, c = original_float.shape
+
+    # 1. Gaussian Blur (Convolution)
+    gaussian_kernel = create_gaussian_kernel(sigma)
+    blurred_float = np.zeros_like(original_float)
+    for ch in range(c):
+        blurred_float[:, :, ch] = convolve2d(original_float[:, :, ch], gaussian_kernel, mode='same', boundary='symm')
+    
+    # 2. Wiener Deconvolution (Frequency Domain)
+    recovered_float = np.zeros_like(original_float)
+    
+    # Pad size for FFT
+    padded_m = int(2 ** np.ceil(np.log2(m)))
+    padded_n = int(2 ** np.ceil(np.log2(n)))
+    padded_size = (padded_m, padded_n)
+    
+    # Gaussian kernel in the Frequency Domain
+    H = fft2(gaussian_kernel, padded_size)
+    
+    for ch in range(c):
+        F_blur = fft2(blurred_float[:, :, ch], padded_size)
+        
+        # Wiener Filter formula: F_rec = (conj(H) / (|H|^2 + K)) * F_blur
+        F_rec = (np.conj(H) / (np.abs(H)**2 + K)) * F_blur
+        
+        # Inverse FFT
+        rec = np.real(ifft2(F_rec)) 
+        rec = rec[:m, :n]           
+        recovered_float[:, :, ch] = np.clip(rec, 0, 1) # Clip to [0, 1] range
+    
+    # Convert back to BGR uint8 format for output
+    original_bgr = (original_float * 255).astype(np.uint8)
+    blurred_bgr = (blurred_float * 255).astype(np.uint8)
+    recovered_bgr = (recovered_float * 255).astype(np.uint8)
+    
+    return {
+        'original_data': original_bgr,
+        'blurred_data': blurred_bgr,
+        'recovered_data': recovered_bgr
+    }
+
+# --- Module 2: Object Detection Logic (MODIFIED FOR STABILITY) ---
+
+def load_templates():
+    """Dynamically loads all image files from the template folder into TEMPLATE_DATABASE."""
+    global TEMPLATE_DATABASE
+    TEMPLATE_DATABASE.clear() # Clear database on every load
+    
+    if not TEMPLATE_FOLDER.is_dir():
+        print(f"ERROR: Template folder not found at {TEMPLATE_FOLDER}. Template matching will not work without files.")
+        return
+
+    # Define common image extensions
+    image_extensions = ('*.jpg', '*.jpeg', '*.png', '*.bmp')
+    
+    for ext in image_extensions:
+        for template_path in TEMPLATE_FOLDER.glob(ext):
+            # Load template as grayscale (0)
+            img = cv2.imread(str(template_path), 0)
+            if img is not None:
+                name = template_path.stem 
+                # CRITICAL: We DO NOT resize the template aggressively here, only if it's huge, 
+                # to maintain the original pixel ratio for the current image size.
+                TEMPLATE_DATABASE[name] = img # Store the original loaded grayscale image
+
+    if not TEMPLATE_DATABASE:
+        print("FATAL: No templates loaded.")
+
+
+def process_template_matching(img_bgr: np.ndarray) -> Dict[str, Any]:
+    """
+    Performs multi-scale template matching using TM_CCOEFF_NORMED on grayscale images,
+    filters overlaps using NMS, and applies Gaussian blur on detected regions.
+    """
+    load_templates()
+    
+    scene = img_bgr.copy()
+    scene_processed = scene.copy()
+    
+    # CRITICAL FIX: DO NOT resize the scene image here, use the original uploaded dimensions.
+    # The image is only resized by the browser on display.
+    scene_gray = cv2.cvtColor(scene_processed, cv2.COLOR_BGR2GRAY) 
+
+    all_boxes = []
+    all_scores = []
+    
+    overall_best_match = {'score': -1.0, 'name': 'N/A'}
+
+    # Adopted parameters from the working reference code
+    NMS_THRESHOLD = 0.3
+    DETECTION_THRESHOLD = 0.7 # Using 0.65 as a robust working threshold
+
+    # Multi-Scale Parameters (Adjusted to be slightly wider than fixed 0.9-1.1 range)
+    SCALES = np.linspace(0.85, 1.15, 7)[::-1] # Wider search range for better robustness
+    
+    if not TEMPLATE_DATABASE:
+        return {
+            'original_data': resize_for_web(img_bgr, 600),
+            'detected_data': resize_for_web(img_bgr, 600),
+            'match_summary': ["Error: No templates loaded."],
+        }
+
+    # Iterate through all loaded templates
+    for name, base_template_gray in TEMPLATE_DATABASE.items():
+        if base_template_gray is None: continue
+
+        for scale in SCALES:
+            # Resize template for the current scale
+            h_new = int(base_template_gray.shape[0] * scale)
+            w_new = int(base_template_gray.shape[1] * scale)
+
+            if w_new <= 0 or h_new <= 0 or w_new > scene_gray.shape[1] or h_new > scene_gray.shape[0]:
+                continue
+
+            # CRITICAL: cv2.resize ensures the template matches the specific scale against the FULL scene size
+            template = cv2.resize(base_template_gray, (w_new, h_new))
+            w, h = template.shape[::-1]
+
+            # Match using Normalized Cross-Correlation Coefficient (TM_CCOEFF_NORMED)
+            res = cv2.matchTemplate(scene_gray, template, cv2.TM_CCOEFF_NORMED)
+            
+            
+            
+            # Find locations where the score meets the detection threshold
+            loc = np.where(res >= DETECTION_THRESHOLD)
+
+            for pt in zip(*loc[::-1]):
+                score = res[pt[1], pt[0]]
+                all_boxes.append([pt[0], pt[1], w, h])
+                all_scores.append(score)
+
+    # --- NMS Filtering and Final Output Generation ---
+
+    # --- START SUMMARY GENERATION ---
+    match_summary = []
+    
+  
+
+    if not all_boxes:
+        return {
+            'original_data': resize_for_web(img_bgr, 600),
+            'detected_data': resize_for_web(img_bgr, 600),
+            'match_summary': match_summary + [f"No detections found."],
+        }
+
+    # Apply NMS
+    indices = cv2.dnn.NMSBoxes(all_boxes, all_scores, DETECTION_THRESHOLD, NMS_THRESHOLD)
+    
+    detection_count = len(indices)
+
+    for i in indices:
+        idx = i[0] if isinstance(i, np.ndarray) else i 
+        x, y, w, h = all_boxes[idx]
+        score = all_scores[idx]
+        name = "Detected Object" # Placeholder
+
+        
+        # 1. Apply Gaussian Blur to the detected ROI
+        roi = scene_processed[y:y + h, x:x + w].copy()
+        if roi.size > 0:
+            blurred_roi = cv2.GaussianBlur(roi, (51, 51), 0)
+            scene_processed[y:y + h, x:x + w] = blurred_roi
+        
+        # 2. Draw Bounding Box (Red color matching the reference)
+        cv2.rectangle(scene_processed, (x, y), (x + w, y + h), (0, 0, 255), 2)
+        cv2.putText(scene_processed, name, (x, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+
+    # Final Summary: Count + Best Score + Detections
+    final_summary = match_summary
+    
+    # Add the count header at the beginning
+    final_summary.insert(1, f"Successfully detected objects.")
+    
+    return {
+        'original_data': resize_for_web(img_bgr, 600),
+        'detected_data': scene_processed,
+        'match_summary': final_summary,
+    }

@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Module 3: Edge and Corner Detection</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f9fb;
+        }
+        .content-card {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            border-radius: 1rem;
+        }
+        /* Tab Styling */
+        .tab-button-m3 {
+            transition: all 0.3s ease;
+            white-space: nowrap; 
+            padding-left: 0.75rem;
+            padding-right: 0.75rem;
+        }
+        .tab-button-m3.active {
+            border-color: #a78bfa;
+            color: #8b5cf6;
+            background-color: #f3e8ff;
+        }
+        .image-container-m3 {
+            min-height: 200px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            background-color: white;
+            overflow: hidden;
+            margin-bottom: 0.5rem;
+        }
+        .result-image {
+            max-width: 100%;
+            height: auto;
+            display: block;
+        }
+        .placeholder-text {
+            color: #6b7280;
+            font-size: 0.9rem;
+            padding: 20px;
+            text-align: center;
+        }
+        .code-block {
+            background-color: #f3e8ff;
+            color: #581c87;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            font-family: monospace;
+            overflow-x: auto;
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 min-h-screen">
+
+    <header class="mb-8 max-w-6xl mx-auto">
+        <h1 class="text-4xl font-extrabold text-gray-900 text-center">Module 3: Edge and Corner Detection</h1>
+        <button onclick="window.location.href='index.html'" class="mt-4 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition duration-150">
+            &larr; Back to Dashboard
+        </button>
+    </header>
+
+    <main class="max-w-6xl mx-auto">
+        <div class="bg-white p-6 md:p-8 rounded-xl content-card border-t-4 border-purple-500">
+            
+            
+            <div class="flex flex-wrap justify-center mb-6 border-b border-gray-200 gap-2 overflow-x-auto">
+                <button id="tab-log" onclick="showModule3Tab('log')" class="tab-button-m3 active px-3 py-2 text-md font-medium border-b-2 border-transparent hover:border-purple-500 hover:text-purple-500 focus:outline-none">
+                    Gradient Images & LoG Comparison
+                </button>
+                <button id="tab-edge-corner" onclick="showModule3Tab('edge-corner')" class="tab-button-m3 px-3 py-2 text-md font-medium border-b-2 border-transparent hover:border-purple-500 hover:text-purple-500 focus:outline-none">
+                    Edge and Corner Detection
+                </button>
+                <button id="tab-boundary" onclick="showModule3Tab('boundary')" class="tab-button-m3 px-3 py-2 text-md font-medium border-b-2 border-transparent hover:border-purple-500 hover:text-purple-500 focus:outline-none">
+                    Object Boundary Detection
+                </button>
+                <button id="tab-aruco" onclick="showModule3Tab('aruco')" class="tab-button-m3 px-3 py-2 text-md font-medium border-b-2 border-transparent hover:border-purple-500 hover:text-purple-500 focus:outline-none">
+                    ArUco Guided Segmentation
+                </button>
+                <button id="tab-seg-comp" onclick="showModule3Tab('seg-comp')" class="tab-button-m3 px-3 py-2 text-md font-medium border-b-2 border-transparent hover:border-purple-500 hover:text-purple-500 focus:outline-none">
+                    Segmentation Comparison
+                </button>
+            </div>
+
+            <div id="module3-content-container" class="space-y-8">
+                
+                <div id="content-log" class="module3-tab-content">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4">Gradient Images and LoG Comparison</h3>
+                    <p class="text-gray-700 mb-6">Upload an image to visualize its gradient magnitude and angle. The Laplacian of Gaussian filtered version will also be displayed for comparison with the gradient images.</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 items-center">
+                         <div>
+                            <label for="upload-log" class="block text-sm font-medium text-gray-700 mb-2">Upload Image for Gradient Analysis:</label>
+                            <input type="file" id="upload-log" accept="image/*" class="block w-full text-sm text-gray-500 file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200 cursor-pointer">
+                        </div>
+                        <button id="process-log" disabled class="w-full bg-purple-600 text-white p-3 rounded-lg font-semibold hover:bg-purple-700 transition duration-150 disabled:bg-gray-400">
+                            Compute Gradients & LoG
+                        </button>
+                    </div>
+                    <p id="status-log" class="text-sm text-center text-red-500 hidden mt-2">Processing...</p>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6" id="output-log">
+                        <div class="image-container-m3">
+                            <h4 class="text-sm font-medium p-2 border-b w-full text-center bg-gray-100">Original</h4>
+                            <img id="img-log-original" class="result-image" src="" style="display:none;">
+                            <span class="placeholder-text">Original Image</span>
+                        </div>
+                        <div class="image-container-m3">
+                            <h4 class="text-sm font-medium p-2 border-b w-full text-center bg-gray-100">Gradient Magnitude</h4>
+                            <img id="img-log-mag" class="result-image" src="" style="display:none;">
+                            <span class="placeholder-text">Magnitude |∇I|</span>
+                        </div>
+                        <div class="image-container-m3">
+                            <h4 class="text-sm font-medium p-2 border-b w-full text-center bg-gray-100">Gradient Angle</h4>
+                            <img id="img-log-angle" class="result-image" src="" style="display:none;">
+                            <span class="placeholder-text">Angle (Orientation)</span>
+                        </div>
+                         <div class="image-container-m3">
+                            <h4 class="text-sm font-medium p-2 border-b w-full text-center bg-gray-100">LoG (Zero Crossings)</h4>
+                            <img id="img-log-log" class="result-image" src="" style="display:none;">
+                            <span class="placeholder-text">Laplacian of Gaussian</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="content-edge-corner" class="module3-tab-content hidden">
+                    <h2 class="text-2xl font-semibold text-gray-800 mb-4">Edge and Corner Detection</h2>
+                     <p class="text-gray-700 mb-6">Upload an image to detect and mark keypoints in the image. Edge keypoints and corner keypoints will be highlighted separately for visualization.</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 items-center">
+                         <div>
+                            <label for="upload-edge" class="block text-sm font-medium text-gray-700 mb-2">Upload Image for Detection:</label>
+                            <input type="file" id="upload-edge" accept="image/*" class="block w-full text-sm text-gray-500 file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200 cursor-pointer">
+                        </div>
+                        <button id="process-edge" disabled class="w-full bg-purple-600 text-white p-3 rounded-lg font-semibold hover:bg-purple-700 transition duration-150 disabled:bg-gray-400">
+                            Detect Edges and Corners
+                        </button>
+                    </div>
+                    <p id="status-edge" class="text-sm text-center text-red-500 hidden mt-2">Processing...</p>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6" id="output-edge">
+                        <div class="image-container-m3">
+                            <h4 class="text-sm font-medium p-2 border-b w-full text-center bg-gray-100">Original</h4>
+                            <img id="img-edge-original" class="result-image" src="" style="display:none;">
+                            <span class="placeholder-text">Original Image</span>
+                        </div>
+                        <div class="image-container-m3">
+                            <h4 class="text-sm font-medium p-2 border-b w-full text-center bg-gray-100">Thresholded Edges</h4>
+                            <img id="img-edge-edges" class="result-image" src="" style="display:none;">
+                            <span class="placeholder-text">Detected Edges (Binary)</span>
+                        </div>
+                        <div class="image-container-m3">
+                            <h4 class="text-sm font-medium p-2 border-b w-full text-center bg-gray-100">Detected Corners</h4>
+                            <img id="img-edge-corners" class="result-image" src="" style="display:none;">
+                            <span class="placeholder-text">Detected Corners (Binary)</span>
+                        </div>
+                         <div class="image-container-m3">
+                            <h4 class="text-sm font-medium p-2 border-b w-full text-center bg-gray-100">Final Overlay</h4>
+                            <img id="img-edge-final" class="result-image" src="" style="display:none;">
+                            <span class="placeholder-text">Edges and Corners Overlay</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="content-boundary" class="module3-tab-content hidden">
+                    <h2 class="text-2xl font-semibold text-gray-800 mb-4">Object Boundary Detection</h2>
+                    <p class="text-gray-700 mb-6">Upload an image to detect and visualize the exact object boundaries using OpenCV.</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 items-center">
+                         <div>
+                            <label for="upload-boundary" class="block text-sm font-medium text-gray-700 mb-2">Upload Image for Contour Tracing:</label>
+                            <input type="file" id="upload-boundary" accept="image/*" class="block w-full text-sm text-gray-500 file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200 cursor-pointer">
+                        </div>
+                        <button id="process-boundary" disabled class="w-full bg-purple-600 text-white p-3 rounded-lg font-semibold hover:bg-purple-700 transition duration-150 disabled:bg-gray-400">
+                            Detect and Draw Boundary
+                        </button>
+                    </div>
+                    <p id="status-boundary" class="text-sm text-center text-red-500 hidden mt-2">Processing...</p>
+
+                    <div class="flex justify-center mt-6">
+                        <div class="image-container-m3 w-full max-w-lg">
+                            <h4 class="text-sm font-medium p-2 border-b w-full text-center bg-gray-100">Boundary Tracing Result</h4>
+                            <img id="img-boundary-output" class="result-image" src="" style="display:none;">
+                            <span class="placeholder-text">Input Image/Processed Result</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="content-aruco" class="module3-tab-content hidden">
+                    <h2 class="text-2xl font-semibold text-gray-800 mb-4">ArUco Guided Object Segmentation</h2>
+                    <p class="text-gray-700 mb-6">Upload an image of your non-rectangular object with ArUco markers on its boundary. The script will detect the markers and segment the object’s boundary for visualization and evaluation. The output includes the boundary overlay and the raw binary mask.</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 items-center">
+                         <div>
+                            <label for="upload-aruco" class="block text-sm font-medium text-gray-700 mb-2">Upload Image with ArUco Markers:</label>
+                            <input type="file" id="upload-aruco" accept="image/*" class="block w-full text-sm text-gray-500 file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200 cursor-pointer">
+                        </div>
+                        <button id="process-aruco" disabled class="w-full bg-purple-600 text-white p-3 rounded-lg font-semibold hover:bg-purple-700 transition duration-150 disabled:bg-gray-400">
+                            Segment Object via ArUco
+                        </button>
+                    </div>
+                    <p id="status-aruco" class="text-sm text-center text-red-500 hidden mt-2">Processing...</p>
+
+                    <div class="flex justify-center mt-6">
+                        <div class="image-container-m3 w-full max-w-lg">
+                            <h4 class="text-sm font-medium p-2 border-b w-full text-center bg-gray-100">ArUco Segmented Image</h4>
+                            <img id="img-aruco-output" class="result-image" src="" style="display:none;">
+                            <span class="placeholder-text">Segmentation result and boundary</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="content-seg-comp" class="module3-tab-content hidden p-4 bg-gray-50 rounded-lg border">
+                    <h2 class="text-2xl font-semibold text-gray-800 mb-4">Segmentation Comparison</h2>
+                    
+                    <p class="text-gray-700 mb-4">Upload the original image and the image segmented using ArUco markers. The script will compare your results with SAM2 segmentation and display both outputs for evaluation.</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 items-center">
+                         <div>
+                            <label for="upload-seg-comp-original" class="block text-sm font-medium text-gray-700 mb-2">1. Original Image (Input for SAM2):</label>
+                            <input type="file" id="upload-seg-comp-original" accept="image/*" class="block w-full text-sm text-gray-500 file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200 cursor-pointer">
+                        </div>
+                         <div>
+                            <label for="upload-seg-comp-aruco" class="block text-sm font-medium text-gray-700 mb-2">2. ArUco Segmented Image (Q4 Output):</label>
+                            <input type="file" id="upload-seg-comp-aruco" accept="image/*" class="block w-full text-sm text-gray-500 file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200 cursor-pointer">
+                        </div>
+                    </div>
+                    <button id="process-seg-comp" disabled class="w-full bg-purple-600 text-white p-3 rounded-lg font-semibold hover:bg-purple-700 transition duration-150 disabled:bg-gray-400">
+                        Run Segmentation Comparison
+                    </button>
+                    <p id="status-seg-comp" class="text-sm text-center text-red-500 hidden mt-2">Processing...</p>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
+                        <div class="image-container-m3">
+                            <h4 class="text-sm font-medium p-2 border-b w-full text-center bg-gray-100">Original Image</h4>
+                            <img id="img-seg-comp-original" class="result-image" src="" style="display:none;">
+                            <span class="placeholder-text">Original Input</span>
+                        </div>
+                         <div class="image-container-m3">
+                            <h4 class="text-sm font-medium p-2 border-b w-full text-center bg-gray-100">ArUco Segmented Image</h4>
+                            <img id="img-seg-comp-aruco" class="result-image" src="" style="display:none;">
+                            <span class="placeholder-text">ArUco Segmented Input</span>
+                        </div>
+                        <div class="image-container-m3">
+                            <h4 class="text-sm font-medium p-2 border-b w-full text-center bg-gray-100">SAM2 segmentation model</h4>
+                            <img id="img-seg-comp-sam2" class="result-image" src="" style="display:none;">
+                            <span class="placeholder-text">SAM2 Segmented output</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            
+        </div>
+    </main>
+
+    <script>
+        // --- API ROUTES ---
+        const API_LOG = '/detect_gradient';
+        const API_EDGE_CORNER = '/detect_edge_corner';
+        const API_BOUNDARY = '/detect_boundary';
+        const API_ARUCO = '/segment_aruco';
+        const API_SEG_COMP = '/segment_comparison'; // New comparison route
+
+        // --- Tab Logic ---
+        function showModule3Tab(tabId) {
+            document.querySelectorAll('.module3-tab-content').forEach(div => {
+                div.classList.add('hidden');
+            });
+            document.querySelectorAll('.tab-button-m3').forEach(button => {
+                button.classList.remove('active');
+            });
+
+            document.getElementById(`content-${tabId}`).classList.remove('hidden');
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            showModule3Tab('log'); 
+            
+            // --- Initialize Event Listeners for Upload and Processing ---
+            const uploadMap = [
+                { id: 'log', api: API_LOG, outputIds: ['img-log-original', 'img-log-mag', 'img-log-angle', 'img-log-log'] },
+                { id: 'edge', api: API_EDGE_CORNER, outputIds: ['img-edge-original', 'img-edge-edges', 'img-edge-corners', 'img-edge-final'] },
+                { id: 'boundary', api: API_BOUNDARY, outputIds: ['img-boundary-output'] },
+                { id: 'aruco', api: API_ARUCO, outputIds: ['img-aruco-output'] }, // MODIFIED: Only one output
+                { id: 'seg-comp', api: API_SEG_COMP, outputIds: ['img-seg-comp-original', 'img-seg-comp-aruco', 'img-seg-comp-sam2'] }
+            ];
+
+            uploadMap.forEach(item => {
+                const upload = document.getElementById(`upload-${item.id}`);
+                const processBtn = document.getElementById(`process-${item.id}`);
+                
+                if (upload && processBtn) {
+                    if (item.id !== 'seg-comp') {
+                        upload.addEventListener('change', updateButtonState.bind(null, item.id, upload, processBtn));
+                        processBtn.addEventListener('click', () => processModule3SingleFile(item.api, item.id, upload.files[0], item.outputIds));
+                    }
+                }
+            });
+
+            // Special listener for SEG_COMP tab (two file uploads)
+            const uploadOriginal = document.getElementById('upload-seg-comp-original');
+            const uploadAruco = document.getElementById('upload-seg-comp-aruco');
+            const processSegCompBtn = document.getElementById('process-seg-comp');
+
+            function updateSegCompButtonStatus() {
+                const originalFile = uploadOriginal.files[0];
+                const arucoFile = uploadAruco.files[0];
+                processSegCompBtn.disabled = !(originalFile && arucoFile);
+                
+                // Live preview for inputs
+                if (originalFile) displayLocalPreview(originalFile, 'seg-comp', 0);
+                if (arucoFile) displayLocalPreview(arucoFile, 'seg-comp', 1);
+            }
+
+            uploadOriginal.addEventListener('change', updateSegCompButtonStatus);
+            uploadAruco.addEventListener('change', updateSegCompButtonStatus);
+            processSegCompBtn.addEventListener('click', () => processModule3SegComp(API_SEG_COMP, 'seg-comp', uploadOriginal.files[0], uploadAruco.files[0], ['img-seg-comp-original', 'img-seg-comp-aruco', 'img-seg-comp-sam2']));
+        });
+
+        function updateButtonState(tab, inputElement, buttonElement) {
+            if (inputElement.files.length > 0) {
+                buttonElement.disabled = false;
+                // Display local preview for the current image
+                displayLocalPreview(inputElement.files[0], tab);
+            } else {
+                buttonElement.disabled = true;
+                clearImageDisplay(tab, true);
+            }
+        }
+        
+        function displayLocalPreview(file, tabId, index = 0) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                let imgId;
+                
+                if (tabId === 'seg-comp') {
+                    // Index 0: Original, Index 1: ArUco Segmented
+                    imgId = index === 0 ? 'img-seg-comp-original' : 'img-seg-comp-aruco';
+                } else if (tabId === 'log' || tabId === 'edge') {
+                    imgId = `img-${tabId}-original`;
+                } else {
+                    // For Boundary/ArUco (only L1, L2, R1, R2 slots exist for preview)
+                    imgId = tabId === 'boundary' ? 'img-boundary-output' : 'img-aruco-output'; 
+                }
+                
+                const img = document.getElementById(imgId);
+                img.src = e.target.result;
+                img.style.display = 'block';
+                
+                const container = img.closest('.image-container-m3');
+                if (container) {
+                    container.querySelector('.placeholder-text').style.display = 'none';
+                }
+                
+                if (tabId !== 'seg-comp') {
+                    clearImageDisplay(tabId, false);
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function clearImageDisplay(tabId, clearOriginal = true) {
+            const imageIds = {
+                'log': ['img-log-original', 'img-log-mag', 'img-log-angle', 'img-log-log'],
+                'edge': ['img-edge-original', 'img-edge-edges', 'img-edge-corners', 'img-edge-final'],
+                'boundary': ['img-boundary-output'],
+                'aruco': ['img-aruco-output'], // MODIFIED list
+                'seg-comp': ['img-seg-comp-original', 'img-seg-comp-aruco', 'img-seg-comp-sam2']
+            };
+            
+            const ids = imageIds[tabId] || [];
+
+            ids.forEach((id, index) => {
+                if (index === 0 && (tabId === 'log' || tabId === 'edge') && !clearOriginal) return; 
+                
+                const img = document.getElementById(id);
+                if (img) {
+                    img.src = '';
+                    img.style.display = 'none';
+                    const container = img.closest('.image-container-m3');
+                    if (container) {
+                        container.querySelector('.placeholder-text').style.display = 'block';
+                        // Adjust placeholder text based on the slot
+                        let placeholderText = 'Processed Result';
+                        if (index === 0 && (tabId === 'log' || tabId === 'edge' || tabId === 'seg-comp')) {
+                            placeholderText = 'Original Image';
+                        }
+                        container.querySelector('.placeholder-text').textContent = placeholderText;
+
+                    }
+                }
+            });
+        }
+        
+        // --- Single File Processing (Tabs 1, 2, 3, 4) ---
+        async function processModule3SingleFile(route, tabId, file, outputImgIds) {
+            if (!file) return;
+
+            const statusElement = document.getElementById(`status-${tabId}`);
+            const buttonElement = document.getElementById(`process-${tabId}`);
+            
+            buttonElement.disabled = true;
+            statusElement.classList.remove('hidden');
+            statusElement.textContent = "Processing image on server..."; 
+            
+            const formData = new FormData();
+            formData.append('image', file);
+            
+            try {
+                const response = await fetch(route, {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Unknown server error.');
+                }
+                
+                // Display results (data.images contains map of base64 strings)
+                outputImgIds.forEach((id, index) => {
+                    const img = document.getElementById(id);
+                    let base64Data;
+                    
+                    if (tabId === 'log') {
+                        if (index === 0) base64Data = data.images.original; 
+                        if (index === 1) base64Data = data.images.gradient_magnitude;
+                        if (index === 2) base64Data = data.images.gradient_angle;
+                        if (index === 3) base64Data = data.images.log;
+                    } else if (tabId === 'edge') {
+                        if (index === 0) base64Data = data.images.original;
+                        if (index === 1) base64Data = data.images.edges;
+                        if (index === 2) base64Data = data.images.corners;
+                        if (index === 3) base64Data = data.images.final;
+                    } else if (tabId === 'boundary') {
+                        base64Data = data.images.output;
+                    } else if (tabId === 'aruco') {
+                        // MODIFIED: Only one output expected from backend
+                        if (index === 0) base64Data = data.images.segmented; 
+                    }
+
+                    if (base64Data) {
+                        img.src = `data:image/jpeg;base64,${base64Data}`;
+                        img.style.display = 'block';
+                        img.closest('.image-container-m3').querySelector('.placeholder-text').style.display = 'none';
+                    }
+                });
+
+
+                statusElement.textContent = "Processing complete. Results loaded.";
+
+            } catch (error) {
+                console.error(`Processing failed for ${tabId}:`, error);
+                statusElement.textContent = `Error: ${error.message}. Check Python console.`;
+            } finally {
+                buttonElement.disabled = false;
+                setTimeout(() => statusElement.classList.add('hidden'), 5000); 
+            }
+        }
+        
+        // --- Seg Comp Processing (Tab 5 - Two Files) ---
+        async function processModule3SegComp(route, tabId, originalFile, arucoFile, outputImgIds) {
+            if (!originalFile || !arucoFile) return;
+
+            const statusElement = document.getElementById(`status-${tabId}`);
+            const buttonElement = document.getElementById(`process-${tabId}`);
+            
+            buttonElement.disabled = true;
+            statusElement.classList.remove('hidden');
+            statusElement.textContent = "Processing comparison on server..."; 
+            
+            const formData = new FormData();
+            formData.append('original_file', originalFile);
+            formData.append('aruco_segmented_file', arucoFile);
+            
+            try {
+                const response = await fetch(route, {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Unknown server error.');
+                }
+                
+                // Display results (Original, ArUco Mask, Simulated SAM2 Mask)
+                
+                document.getElementById('img-seg-comp-original').src = `data:image/jpeg;base64,${data.images.original}`;
+                document.getElementById('img-seg-comp-aruco').src = `data:image/jpeg;base64,${data.images.aruco_mask}`;
+                document.getElementById('img-seg-comp-sam2').src = `data:image/jpeg;base64,${data.images.sam2_mask}`;
+                
+                // Hide placeholders and show images
+                outputImgIds.forEach(id => {
+                    const img = document.getElementById(id);
+                    img.style.display = 'block';
+                    img.closest('.image-container-m3').querySelector('.placeholder-text').style.display = 'none';
+                });
+
+                statusElement.textContent = "Comparison complete. Results loaded.";
+
+            } catch (error) {
+                console.error(`Processing failed for ${tabId}:`, error);
+                statusElement.textContent = `Error: ${error.message}. Check Python console.`;
+            } finally {
+                buttonElement.disabled = false;
+                setTimeout(() => statusElement.classList.add('hidden'), 5000); 
+            }
+        }
+
+    </script>
+</body>
+</html>

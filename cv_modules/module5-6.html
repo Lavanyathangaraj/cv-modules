@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Module 5-6: Motion and Tracking</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f9fb;
+        }
+        .content-card {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            border-radius: 1rem;
+        }
+        /* Top Tab Styling */
+        .tab-button {
+            transition: all 0.3s ease;
+        }
+        .tab-button.active {
+            border-color: #a78bfa; /* Pastel Purple 400 */
+            color: #8b5cf6; /* Violet 600 */
+            background-color: #f3e8ff; /* Purple 100 */
+        }
+        /* Sub-Tab Styling */
+        .sub-tab-button {
+            transition: all 0.2s ease;
+            border-radius: 0.5rem;
+        }
+        .sub-tab-button.active {
+            background-color: #8b5cf6; /* Violet 600 */
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .image-display {
+            max-width: 100%;
+            height: auto;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
+        }
+        /* Style for the ROI selection overlay (REMOVED: but keeping basic styling) */
+        #selection-box {
+            position: absolute;
+            border: 2px dashed red;
+            pointer-events: none; 
+            z-index: 100;
+            display: none;
+        }
+        .derivation-container {
+            border: 1px solid #e5e7eb;
+            height: 700px; /* Fixed height for PDF view */
+            overflow: hidden;
+            background-color: #f9fafb;
+            border-radius: 0.5rem;
+        }
+        .pdf-embed {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        .derivation-link {
+            display: block;
+            text-align: center;
+            margin-top: 10px;
+            font-weight: 600;
+            color: #8b5cf6;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 min-h-screen">
+
+    <header class="mb-8 max-w-6xl mx-auto">
+        <h1 class="text-4xl font-extrabold text-gray-900 text-center">Module 5-6: Motion & Object Tracking</h1>
+        <button onclick="window.location.href='index.html'" class="mt-4 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition duration-150">
+            &larr; Back to Dashboard
+        </button>
+    </header>
+
+    <main class="max-w-6xl mx-auto">
+        <div class="bg-white p-6 md:p-8 rounded-xl content-card border-t-4 border-purple-500">
+            
+            <div class="flex flex-wrap justify-center mb-6 border-b border-gray-200 gap-2">
+                <button id="tab-derivation" onclick="showModuleTab('derivation')" class="tab-button active px-4 py-2 text-md font-medium border-b-2 border-transparent hover:border-purple-500 hover:text-purple-500 focus:outline-none">
+                    Derivation: Motion Tracking Equation
+                </button>
+                <button id="tab-tracking" onclick="showModuleTab('tracking')" class="tab-button px-4 py-2 text-md font-medium border-b-2 border-transparent hover:border-purple-500 hover:text-purple-500 focus:outline-none">
+                    Real-Time Object Tracker
+                </button>
+            </div>
+
+            <div id="content-derivation" class="module-tab-content">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-6">Derivation: Motion Tracking Equation</h2>
+                <p class="text-gray-600 mb-6">These derivations address the fundamental Optical Flow and Lucas-Kanade algorithms for motion estimation. The solution documents are embedded below. <strong class="text-red-600">Note: Browser compatibility for PDF embedding may vary.</strong></p>
+                
+                <div class="space-y-8">
+                    <div class="p-4 bg-gray-50 rounded-lg border">
+                        <h3 class="text-xl font-medium text-purple-600 mb-3">1(a) Motion Tracking Equation Derivation</h3>
+                        
+                        <div class="derivation-container">
+                            <iframe src="module5-6_1_a_motionTrackingEquation.pdf" class="pdf-embed" title="Optical Flow Derivation"></iframe>
+                        </div>
+                        <a href="module5-6_1_a_motionTrackingEquation.pdf" target="_blank" download="module5-6_1_a_motionTrackingEquation.pdf" class="derivation-link">
+                            Click to Download/Open Derivation 1(a) (PDF) in New Tab
+                        </a>
+                    </div>
+
+                    <div class="p-4 bg-gray-50 rounded-lg border">
+                        <h3 class="text-xl font-medium text-purple-600 mb-3">1(b) Lucas-Kanade for Affine Motion Model Derivation</h3>
+
+                        <div class="derivation-container">
+                             <iframe src="module5-6_1_b_lucasKanadeAlgorithm.pdf" class="pdf-embed" title="Lucas-Kanade Derivation"></iframe>
+                        </div>
+                         <a href="module5-6_1_b_lucasKanadeAlgorithm.pdf" target="_blank" download="module5-6_1_b_lucasKanadeAlgorithm.pdf" class="derivation-link">
+                            Click to Download/Open Derivation 1(b) (PDF) in New Tab
+                        </a>
+                    </div>
+
+                </div>
+            </div>
+
+            <div id="content-tracking" class="module-tab-content hidden">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4">Real-Time Object Tracker Implementations</h2>
+                
+                <div class="flex flex-wrap justify-center mb-6 gap-2">
+                    <button id="sub-tab-marker" onclick="showTrackingSubTab('marker')" class="sub-tab-button active px-4 py-2 text-md font-medium bg-purple-600 text-white hover:bg-purple-700 focus:outline-none">
+                        Marker-Based Tracker (QR Code)
+                    </button>
+                    <button id="sub-tab-marker-free" onclick="showTrackingSubTab('marker-free')" class="sub-tab-button px-4 py-2 text-md font-medium text-gray-700 border border-gray-300 hover:bg-gray-100 focus:outline-none">
+                        Marker-Free Tracker (CSRT)
+                    </button>
+                    <button id="sub-tab-sam" onclick="showTrackingSubTab('sam')" class="sub-tab-button px-4 py-2 text-md font-medium text-gray-700 border border-gray-300 hover:bg-gray-100 focus:outline-none">
+                        SAM2 Segmentation Based Tracker
+                    </button>
+                </div>
+
+                <div id="webcam-info" class="p-4 bg-yellow-100 border border-yellow-300 rounded-lg text-sm text-yellow-800 mb-6 text-center">
+                    <p class="font-bold">Access Control: Start the Video Stream</p>
+                    <p id="status-message" class="mb-3">Click the button below to explicitly request webcam access and begin streaming the tracker output.</p>
+                    <div id="control-container">
+                        <button id="access-video-marker" onclick="toggleTracking('marker')" class="px-6 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition duration-150">
+                            Access Video & Start Tracking
+                        </button>
+                        <button id="access-video-csrt" onclick="toggleTracking('marker-free')" class="px-6 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition duration-150 hidden">
+                             Access Video & Start Tracking
+                        </button>
+                        <button id="access-video-sam" onclick="toggleTracking('sam')" class="px-6 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition duration-150 hidden">
+                             Access Video & Start Tracking
+                        </button>
+                    </div>
+                    </div>
+
+
+                <div id="tracking-sub-content">
+                    
+                    <div id="content-marker" class="tracking-sub-tab">
+                        <div class="p-4 bg-purple-50 rounded-lg border border-purple-300">
+                            <h3 class="text-xl font-medium text-purple-800 mb-3">Marker-Based Tracker (QR Code)</h3>
+                            <p class="text-sm text-gray-700 mb-4">**LIVE WEBCAM FEED:** Detects and tracks QR codes</p>
+                            
+                            <div id="tracking-marker-feed" class="w-full h-auto bg-gray-200 flex justify-center items-center rounded-lg overflow-hidden border-4 border-gray-400 relative">
+                                <img id="video-stream-marker" src="" alt="Live Marker Tracking Feed" class="result-image" style="max-width: 100%; min-height: 250px; display: none;">
+                                <p id="video-placeholder-marker" class="p-4 text-gray-600">Click "Access Video" to start the stream. Show a QR code to the camera.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="content-marker-free" class="tracking-sub-tab hidden">
+                        <div class="p-4 bg-green-50 rounded-lg border border-green-300">
+                            <h3 class="text-xl font-medium text-green-800 mb-3">Marker-Free Tracker</h3>
+                            <p class="text-sm text-gray-700 mb-4">**LIVE WEBCAM FEED:** Uses the CSRT tracker. The tracker will automatically initialize on the central area after a 5-second countdown. Place your object inside the center box before the countdown ends.</p>
+                            
+                            <div id="tracking-live-feed" class="w-full h-auto bg-gray-200 flex justify-center items-center rounded-lg overflow-hidden border-4 border-gray-400 relative">
+                                <img id="video-stream-csrt" src="" alt="Live Marker-Free Tracking Feed" class="result-image" style="max-width: 100%; min-height: 250px; display: none;">
+                                <p id="video-placeholder-csrt" class="p-4 text-gray-600">Click "Access Video" to start the stream.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="content-sam" class="tracking-sub-tab hidden">
+                        <div class="p-4 bg-blue-50 rounded-lg border border-blue-300">
+                            <h3 class="text-xl font-medium text-blue-800 mb-3">SAM2 Segmentation Based Tracker</h3>
+                            <p class="text-sm text-gray-700 mb-4">**LIVE WEBCAM FEED:** The tracker is initialized using the bounding box from the offline `sam2_data.npz` file after a 5-second countdown. Place your object inside the yellow box before the countdown ends.</p>
+                            
+                             <div id="tracking-sam-feed" class="w-full h-auto bg-gray-200 flex justify-center items-center rounded-lg overflow-hidden border-4 border-gray-400 relative">
+                                <img id="video-stream-sam" src="" alt="Live SAM2 Tracking Feed" class="result-image" style="max-width: 100%; min-height: 250px; display: none;">
+                                <p id="video-placeholder-sam" class="p-4 text-gray-600">Click "Access Video" to start the stream. (Requires offline creation of npz file)</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        // --- Shared UI Elements ---
+        const webcamInfo = document.getElementById('webcam-info');
+        const statusMessage = document.getElementById('status-message');
+        
+        // Buttons 
+        const accessVideoMarkerBtn = document.getElementById('access-video-marker');
+        const accessVideoCSRTBtn = document.getElementById('access-video-csrt');
+        const accessVideoSAMBtn = document.getElementById('access-video-sam');
+
+        // --- Video Stream Elements ---
+        const videoStreamCSRT = document.getElementById('video-stream-csrt');
+        const videoPlaceholderCSRT = document.getElementById('video-placeholder-csrt');
+        const trackingLiveFeedCSRT = document.getElementById('tracking-live-feed');
+        
+        const videoStreamMarker = document.getElementById('video-stream-marker');
+        const videoPlaceholderMarker = document.getElementById('video-placeholder-marker');
+        const trackingLiveFeedMarker = document.getElementById('tracking-marker-feed');
+
+        const videoStreamSAM = document.getElementById('video-stream-sam');
+        const videoPlaceholderSAM = document.getElementById('video-placeholder-sam');
+        const trackingLiveFeedSAM = document.getElementById('tracking-sam-feed');
+
+        // State machine variables
+        let trackingState = 'STOPPED'; // STOPPED, STREAMING
+        let currentMode = 'marker'; // marker, marker-free, sam
+        
+        // --- Status Helper ---
+        function updateStatus(message, type = 'info') {
+            const bg = type === 'error' ? 'bg-red-100 border-red-300 text-red-800' : 'bg-yellow-100 border-yellow-300 text-yellow-800';
+            webcamInfo.className = `p-4 border rounded-lg text-sm mb-6 text-center ${bg}`;
+            
+            statusMessage.innerHTML = message;
+            
+            let currentBtn;
+            if (currentMode === 'marker') currentBtn = accessVideoMarkerBtn;
+            else if (currentMode === 'marker-free') currentBtn = accessVideoCSRTBtn;
+            else if (currentMode === 'sam') currentBtn = accessVideoSAMBtn;
+            else return; 
+
+            currentBtn.disabled = false;
+            currentBtn.classList.remove('bg-green-600', 'hover:bg-green-700', 'bg-red-600', 'hover:bg-red-700', 'bg-orange-500', 'hover:bg-orange-600');
+            
+            if (trackingState === 'STOPPED') {
+                currentBtn.textContent = "Access Video & Start Tracking";
+                currentBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+                
+            } else if (trackingState === 'STREAMING') {
+                currentBtn.textContent = "Stop Tracking Entirely";
+                currentBtn.classList.add('bg-red-600', 'hover:bg-red-700');
+            } 
+        }
+        
+        // --- Core Start/Stop/Toggle Logic ---
+        async function startTrackingMode(mode) {
+            currentMode = mode;
+            let videoElement, placeholderElement, feedContainer, streamRoute, currentBtn;
+            
+            if (mode === 'marker') {
+                currentBtn = accessVideoMarkerBtn;
+                videoElement = videoStreamMarker;
+                placeholderElement = videoPlaceholderMarker;
+                feedContainer = trackingLiveFeedMarker;
+                streamRoute = "/video_feed_marker";
+            } else if (mode === 'marker-free') {
+                currentBtn = accessVideoCSRTBtn;
+                videoElement = videoStreamCSRT;
+                placeholderElement = videoPlaceholderCSRT;
+                feedContainer = trackingLiveFeedCSRT;
+                streamRoute = "/video_feed_tracking";
+            } else if (mode === 'sam') {
+                currentBtn = accessVideoSAMBtn;
+                videoElement = videoStreamSAM;
+                placeholderElement = videoPlaceholderSAM;
+                feedContainer = trackingLiveFeedSAM;
+                streamRoute = "/video_feed_sam2";
+            } else {
+                return;
+            }
+            
+            currentBtn.disabled = true;
+            updateStatus(`Initializing ${mode} tracker... (Watch for the countdown)`, 'info');
+            
+            // 1. Tell the server which mode to use (CRITICAL STEP for initialization delay)
+            try {
+                const response = await fetch('/start_tracking_mode', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ mode: mode })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok || data.status !== 'Success') {
+                    throw new Error(data.message || 'Failed to set tracking mode on server.');
+                }
+            } catch (error) {
+                updateStatus(`Error: ${error.message}. Check Python server console.`, 'error');
+                currentBtn.disabled = false;
+                return;
+            }
+
+
+            // 2. Start the appropriate video stream by setting the src
+            
+            videoElement.src = ""; // Clear existing source
+            videoElement.src = streamRoute + '?t=' + Date.now();
+            videoElement.style.display = 'block';
+            placeholderElement.style.display = 'none';
+            feedContainer.classList.remove('border-gray-400');
+            feedContainer.classList.add('border-green-600');
+            
+            trackingState = 'STREAMING';
+            updateStatus(`Live Stream Active (${mode}). Place object in view during the countdown.`, 'info');
+            currentBtn.disabled = false;
+        }
+        
+        function stopTracking() {
+            let videoElement, placeholderElement, activeFeedContainer;
+            if (currentMode === 'marker') {
+                videoElement = videoStreamMarker;
+                placeholderElement = videoPlaceholderMarker;
+                activeFeedContainer = trackingLiveFeedMarker;
+            } else if (currentMode === 'marker-free') {
+                videoElement = videoStreamCSRT;
+                placeholderElement = videoPlaceholderCSRT;
+                activeFeedContainer = trackingLiveFeedCSRT;
+            } else if (currentMode === 'sam') {
+                videoElement = videoStreamSAM;
+                placeholderElement = videoPlaceholderSAM;
+                activeFeedContainer = trackingLiveFeedSAM;
+            } else {
+                return;
+            }
+            
+            videoElement.src = "";
+            placeholderElement.style.display = 'block';
+            videoElement.style.display = 'none';
+            activeFeedContainer.classList.add('border-gray-400');
+            activeFeedContainer.classList.remove('border-green-600');
+            
+            trackingState = 'STOPPED';
+            updateStatus("Tracking stopped. Click 'Access Video & Start Tracking' to restart.", 'info');
+        }
+
+        // Universal Toggle Function
+        function toggleTracking(mode) {
+             if (trackingState === 'STREAMING' && currentMode === mode) {
+                stopTracking();
+            } else {
+                stopTracking(); // Stop any other active stream cleanly
+                startTrackingMode(mode);
+            }
+        }
+        
+        // --- TOP Tab Logic ---
+        function showModuleTab(tabId) {
+            document.querySelectorAll('.module-tab-content').forEach(div => { div.classList.add('hidden'); });
+            document.querySelectorAll('.tab-button').forEach(button => { button.classList.remove('active'); });
+            document.getElementById(`content-${tabId}`).classList.remove('hidden');
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+
+            if (tabId !== 'tracking' && trackingState !== 'STOPPED') {
+                stopTracking(); 
+            } else if (tabId === 'tracking') {
+                 showTrackingSubTab(currentMode);
+            }
+        }
+        
+        // --- Tracking Sub-Tab Logic ---
+        function showTrackingSubTab(subTabId) {
+            if (trackingState !== 'STOPPED') {
+                 stopTracking(); 
+            }
+
+            document.querySelectorAll('.tracking-sub-tab').forEach(div => { div.classList.add('hidden'); });
+            document.querySelectorAll('.sub-tab-button').forEach(button => { 
+                button.classList.remove('active', 'bg-purple-600', 'text-white', 'hover:bg-purple-700');
+                button.classList.add('border', 'border-gray-300', 'text-gray-700', 'hover:bg-gray-100');
+            });
+            
+            // Hide all mode buttons
+            accessVideoMarkerBtn.classList.add('hidden');
+            accessVideoCSRTBtn.classList.add('hidden');
+            accessVideoSAMBtn.classList.add('hidden');
+
+
+            document.getElementById(`content-${subTabId}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`sub-tab-${subTabId}`);
+            activeBtn.classList.add('active', 'bg-purple-600', 'text-white', 'hover:bg-purple-700');
+            activeBtn.classList.remove('border', 'border-gray-300', 'text-gray-700', 'hover:bg-gray-100');
+            
+            // Show the button specific to the current mode
+            if (subTabId === 'marker') accessVideoMarkerBtn.classList.remove('hidden');
+            else if (subTabId === 'marker-free') accessVideoCSRTBtn.classList.remove('hidden');
+            else if (subTabId === 'sam') accessVideoSAMBtn.classList.remove('hidden');
+
+
+            currentMode = subTabId;
+            updateStatus(`Mode changed to ${currentMode}. Click 'Access Video & Start Tracking' to begin.`, 'info');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            showModuleTab('derivation');
+            showTrackingSubTab('marker'); // Default to QR Code Tracker
+            updateStatus("Click 'Access Video & Start Tracking' to begin.", 'info'); 
+        });
+    </script>
+</body>
+</html>

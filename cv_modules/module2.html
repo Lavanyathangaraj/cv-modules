@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Module 2: Object Detection and Image Filter Simulation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f9fb;
+        }
+        .content-card {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            border-radius: 1rem;
+        }
+        /* Tab Styling */
+        .tab-button-m2 {
+            transition: all 0.3s ease;
+        }
+        .tab-button-m2.active {
+            border-color: #a78bfa; /* Pastel Purple 400 */
+            color: #8b5cf6; /* Violet 600 */
+            background-color: #f3e8ff; /* Purple 100 */
+        }
+        /* Image Display Styling */
+        .image-container {
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto;
+            border: 1px solid #e5e7eb;
+            background-color: #f9fafb;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            min-height: 250px;
+        }
+        .result-image {
+            max-width: 100%;
+            height: auto;
+            display: block;
+        }
+        .placeholder-text {
+            color: #6b7280;
+            font-size: 0.9rem;
+            padding: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 min-h-screen">
+
+    <header class="mb-8 max-w-6xl mx-auto">
+        <h1 class="text-4xl font-extrabold text-gray-900 text-center">Module 2: Object Detection and Image Filter Simulation</h1>
+        <button onclick="window.location.href='index.html'" class="mt-4 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition duration-150">
+            &larr; Back to Dashboard
+        </button>
+    </header>
+
+    <main class="max-w-6xl mx-auto">
+        <div class="bg-white p-6 md:p-8 rounded-xl content-card border-t-4 border-purple-500">
+            
+            <div class="flex flex-wrap justify-center mb-6 border-b border-gray-200 gap-2">
+                <button id="tab-filter" onclick="showModule2Tab('filter')" class="tab-button-m2 active px-4 py-2 text-md font-medium border-b-2 border-transparent hover:border-purple-500 hover:text-purple-500 focus:outline-none">
+                    Image Filter Simulation
+                </button>
+                <button id="tab-detection" onclick="showModule2Tab('detection')" class="tab-button-m2 px-4 py-2 text-md font-medium border-b-2 border-transparent hover:border-purple-500 hover:text-purple-500 focus:outline-none">
+                    Object Detection
+                </button>
+            </div>
+
+
+            <div id="content-filter" class="module2-tab-content">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-6">Image Filter Simulation (Convolution & Recovery)</h2>
+                <p class="text-gray-600 mb-6">Simulate Gaussian blurring and Wiener Deconvolution using the Fourier transform.</p>
+                
+                <div class="flex flex-col md:flex-row gap-6 mb-8 items-start">
+                    <div class="flex-grow w-full md:w-1/3">
+                        <label for="image-upload-m2" class="block text-sm font-medium text-gray-700 mb-2">Select Image:</label>
+                        <input type="file" id="image-upload-m2" accept="image/jpeg, image/png" class="block w-full text-sm text-gray-500
+                            file:mr-4 file:py-2 file:px-4
+                            file:rounded-lg file:border-0
+                            file:text-sm file:font-semibold
+                            file:bg-purple-100 file:text-purple-700
+                            hover:file:bg-purple-200 cursor-pointer
+                        ">
+                    </div>
+                    
+                    <div class="flex-grow w-full md:w-2/3 space-y-4 flex justify-center items-center h-full">
+                        
+                        <button id="process-button" disabled class="w-full bg-purple-600 text-white p-3 rounded-lg font-semibold hover:bg-purple-700 transition duration-150 disabled:bg-gray-400">
+                            Apply Convolution and Fourier Transform
+                        </button>
+                        <p id="processing-status" class="text-sm text-center text-red-500 hidden mt-2">Processing...</p>
+                    </div>
+                </div>
+                
+                <div id="image-display-section" class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+                    
+                    <div class="image-container">
+                        <h3 class="text-lg font-semibold text-gray-700 p-2 border-b w-full text-center bg-gray-50">Original Image</h3>
+                        <img id="original-image" class="result-image" src="" alt="Original Image" style="display: none;">
+                        <span id="original-placeholder" class="placeholder-text">Upload image to view.</span>
+                    </div>
+
+                    <div class="image-container">
+                        <h3 class="text-lg font-semibold text-gray-700 p-2 border-b w-full text-center bg-gray-50">Blurred Image</h3>
+                        <img id="blurred-image" class="result-image" src="" alt="Blurred Image" style="display: none;">
+                        <span id="blurred-placeholder" class="placeholder-text">Processed result here.</span>
+                    </div>
+
+                    <div class="image-container">
+                        <h3 class="text-lg font-semibold text-gray-700 p-2 border-b w-full text-center bg-gray-50">Recovered Image</h3>
+                        <img id="recovered-image" class="result-image" src="" alt="Recovered Image" style="display: none;">
+                        <span id="recovered-placeholder" class="placeholder-text">Processed result here.</span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="content-detection" class="module2-tab-content hidden p-6">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-6">Object Detection</h2>
+                
+                <p class="text-gray-700 mb-4">Upload a scene image to match it against the templates using correlation, and to detect object regions. Each detected region will be blurred and the processed image will be displayed.</p>
+
+                <div class="space-y-4 p-4 bg-purple-50 rounded-lg border border-purple-300 mb-6">
+                    
+                    <label for="image-upload-scene" class="block text-sm font-medium text-gray-700 mb-2">1. Upload Scene Image (where objects are located):</label>
+                    <input type="file" id="image-upload-scene" accept="image/jpeg, image/png" class="block w-full text-sm text-gray-500 file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200 cursor-pointer">
+                    
+                    <button id="detect-button" disabled class="w-full bg-green-600 text-white p-3 rounded-lg font-semibold hover:bg-green-700 transition duration-150 disabled:bg-gray-400 mt-4">
+                        Detect Objects & Blur Regions
+                    </button>
+                    <p id="detection-status" class="text-sm text-center text-red-500 hidden mt-2">Processing...</p>
+                </div>
+                
+                <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+                    
+                    <div class="image-container">
+                        <h3 class="text-lg font-semibold text-gray-700 p-2 border-b w-full text-center bg-gray-50">Original Scene Image</h3>
+                        <img id="scene-original-image" class="result-image" src="" alt="Original Scene Image" style="display: none;">
+                        <span id="scene-original-placeholder" class="placeholder-text">Upload scene image to view.</span>
+                    </div>
+
+                    <div class="image-container">
+                        <h3 class="text-lg font-semibold text-gray-700 p-2 border-b w-full text-center bg-gray-50">Detected & Blurred Regions</h3>
+                        <img id="scene-detected-image" class="result-image" src="" alt="Detected and Blurred Image" style="display: none;">
+                        <span id="scene-detected-placeholder" class="placeholder-text">Detection result here.</span>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        // --- FIXED SIGMA VALUE (for the server to use) ---
+        const HARDCODED_SIGMA = 3.0; 
+        const HARDCODED_K = 0.0001; // <--- MODIFIED K VALUE FOR SHARPER RECOVERY
+        
+        // --- UI Elements (Filter Tab) ---
+        const fileInputM2 = document.getElementById('image-upload-m2');
+        const processButton = document.getElementById('process-button');
+        const statusMessage = document.getElementById('processing-status');
+
+        const originalImg = document.getElementById('original-image');
+        const blurredImg = document.getElementById('blurred-image');
+        const recoveredImg = document.getElementById('recovered-image');
+        
+        const originalPlaceholder = document.getElementById('original-placeholder');
+        const blurredPlaceholder = document.getElementById('blurred-placeholder');
+        const recoveredPlaceholder = document.getElementById('recovered-placeholder');
+
+
+        let imageFileM2 = null;
+
+        // --- Tab Logic ---
+        function showModule2Tab(tabId) {
+            document.querySelectorAll('.module2-tab-content').forEach(div => {
+                div.classList.add('hidden');
+            });
+            document.querySelectorAll('.tab-button-m2').forEach(button => {
+                button.classList.remove('active');
+            });
+
+            const contentDiv = document.getElementById(`content-${tabId}`);
+            contentDiv.classList.remove('hidden');
+            
+            if (tabId === 'detection') {
+                contentDiv.classList.add('p-6');
+            } else {
+                 contentDiv.classList.remove('p-6');
+            }
+
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+        }
+
+        // Initialize the correct tab
+        document.addEventListener('DOMContentLoaded', () => {
+            showModule2Tab('filter');
+        });
+
+
+        // 1. Image File Handling (Filter Tab)
+        fileInputM2.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                imageFileM2 = e.target.files[0];
+                processButton.disabled = false;
+                displayLocalPreview(imageFileM2);
+                clearProcessedResults(); 
+            } else {
+                imageFileM2 = null;
+                processButton.disabled = true;
+                clearAllResults();
+            }
+        });
+
+        function displayLocalPreview(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                originalImg.src = e.target.result;
+                originalImg.style.display = 'block';
+                originalPlaceholder.style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function clearProcessedResults() {
+            blurredImg.src = '';
+            blurredImg.style.display = 'none';
+            blurredPlaceholder.style.display = 'block';
+            
+            recoveredImg.src = '';
+            recoveredImg.style.display = 'none';
+            recoveredPlaceholder.style.display = 'block';
+        }
+        
+        function clearAllResults() {
+            originalImg.src = '';
+            originalImg.style.display = 'none';
+            originalPlaceholder.style.display = 'block';
+            clearProcessedResults();
+        }
+
+
+        // 2. Control Handling (Filter Tab)
+        processButton.addEventListener('click', processImageM2);
+        
+        // 3. Main Processing Pipeline (Filter Tab)
+        async function processImageM2() {
+            if (!imageFileM2) return;
+
+            processButton.disabled = true;
+            statusMessage.classList.remove('hidden');
+            statusMessage.textContent = "Processing image on server..."; 
+            
+            clearProcessedResults();
+
+
+            const formData = new FormData();
+            formData.append('image', imageFileM2);
+            formData.append('sigma', HARDCODED_SIGMA);
+            formData.append('K', HARDCODED_K); 
+
+            try {
+                const response = await fetch('/filter', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Unknown server error during filtering.');
+                }
+                
+                // Display results
+                originalImg.src = `data:image/jpeg;base64,${data.original_data}`;
+                
+                blurredImg.src = `data:image/jpeg;base64,${data.blurred_data}`;
+                blurredImg.style.display = 'block';
+                blurredPlaceholder.style.display = 'none';
+                
+                recoveredImg.src = `data:image/jpeg;base64,${data.recovered_data}`;
+                recoveredImg.style.display = 'block';
+                recoveredPlaceholder.style.display = 'none';
+                
+                statusMessage.textContent = "Processing complete.";
+
+            } catch (error) {
+                console.error("Image processing failed:", error);
+                statusMessage.textContent = `Error: ${error.message}. Ensure the Python server is running.`;
+            } finally {
+                processButton.disabled = false;
+                setTimeout(() => statusMessage.classList.add('hidden'), 5000); 
+            }
+        }
+        
+        // --- NEW Template Matching Logic (Detection Tab) ---
+        const fileInputScene = document.getElementById('image-upload-scene');
+        const detectButton = document.getElementById('detect-button');
+        const detectionStatus = document.getElementById('detection-status');
+
+        const sceneOriginalImg = document.getElementById('scene-original-image');
+        const sceneDetectedImg = document.getElementById('scene-detected-image');
+        const sceneOriginalPlaceholder = document.getElementById('scene-original-placeholder');
+        const sceneDetectedPlaceholder = document.getElementById('scene-detected-placeholder');
+        
+        let sceneImageFile = null;
+
+        // 1. File Handling (Detection Tab)
+        fileInputScene.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                sceneImageFile = e.target.files[0];
+                detectButton.disabled = false;
+                displaySceneLocalPreview(sceneImageFile);
+                clearSceneProcessedResults(); 
+            } else {
+                sceneImageFile = null;
+                detectButton.disabled = true;
+                clearSceneAllResults();
+            }
+        });
+
+        function displaySceneLocalPreview(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                sceneOriginalImg.src = e.target.result;
+                sceneOriginalImg.style.display = 'block';
+                sceneOriginalPlaceholder.style.display = 'none';
+                sceneDetectedPlaceholder.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function clearSceneProcessedResults() {
+            sceneDetectedImg.src = '';
+            sceneDetectedImg.style.display = 'none';
+            sceneDetectedPlaceholder.style.display = 'block';
+        }
+        
+        function clearSceneAllResults() {
+            sceneOriginalImg.src = '';
+            sceneOriginalImg.style.display = 'none';
+            sceneOriginalPlaceholder.style.display = 'block';
+            clearSceneProcessedResults();
+        }
+
+
+        // 2. Control Handling (Detection Tab)
+        detectButton.addEventListener('click', processTemplateMatching);
+        
+        // 3. Main Processing Pipeline (Detection Tab)
+        async function processTemplateMatching() {
+            if (!sceneImageFile) return;
+
+            detectButton.disabled = true;
+            detectionStatus.classList.remove('hidden');
+            detectionStatus.textContent = "Searching for objects in the scene..."; 
+            clearSceneProcessedResults();
+
+
+            const formData = new FormData();
+            formData.append('scene_image', sceneImageFile);
+
+            try {
+                const response = await fetch('/detect_template', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Unknown server error during template matching.');
+                }
+                
+                // Display results
+                sceneOriginalImg.src = `data:image/jpeg;base64,${data.original_data}`;
+                sceneOriginalImg.style.display = 'block';
+                sceneOriginalPlaceholder.style.display = 'none';
+                
+                sceneDetectedImg.src = `data:image/jpeg;base64,${data.detected_data}`;
+                sceneDetectedImg.style.display = 'block';
+                sceneDetectedPlaceholder.style.display = 'none';
+                
+                // Update match summary (single message from server)
+                detectionStatus.textContent = data.match_summary[0];
+
+            } catch (error) {
+                console.error("Template matching failed:", error);
+                detectionStatus.textContent = `Error: ${error.message}. Ensure the Python server is running and templates are available.`;
+            } finally {
+                detectButton.disabled = false;
+                setTimeout(() => detectionStatus.classList.add('hidden'), 5000); 
+            }
+        }
+    </script>
+</body>
+</html>

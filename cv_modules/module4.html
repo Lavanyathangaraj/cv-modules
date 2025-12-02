@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Module 4: Stitching & Feature Extraction</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f9fb;
+        }
+        .content-card {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            border-radius: 1rem;
+        }
+        /* Tab Styling */
+        .tab-button {
+            transition: all 0.3s ease;
+        }
+        .tab-button.active {
+            border-color: #a78bfa; /* Pastel Purple 400 */
+            color: #8b5cf6; /* Violet 600 */
+            background-color: #f3e8ff; /* Purple 100 */
+        }
+        /* Image Display Styling */
+        .image-container {
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto;
+            border: 1px solid #e5e7eb;
+            background-color: #f9fafb;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            min-height: 200px;
+        }
+        .result-image {
+            max-width: 100%;
+            height: auto;
+            display: block;
+        }
+        .math-display {
+            font-size: 1.125rem;
+            font-family: serif;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 min-h-screen">
+
+    <header class="mb-8 max-w-6xl mx-auto">
+        <h1 class="text-4xl font-extrabold text-gray-900 text-center">Module 4: Image Stitching & Feature Extraction</h1>
+        <button onclick="window.location.href='index.html'" class="mt-4 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition duration-150">
+            &larr; Back to Dashboard
+        </button>
+    </header>
+
+    <main class="max-w-6xl mx-auto">
+        <div class="bg-white p-6 md:p-8 rounded-xl content-card border-t-4 border-purple-500">
+            
+            <div class="flex flex-wrap justify-center mb-6 border-b border-gray-200 gap-2">
+                <button id="tab-stitching" onclick="showModule4Tab('stitching')" class="tab-button active px-4 py-2 text-md font-medium border-b-2 border-transparent hover:border-purple-500 hover:text-purple-500 focus:outline-none">
+                    Image Stitching
+                </button>
+                <button id="tab-siftransac" onclick="showModule4Tab('siftransac')" class="tab-button px-4 py-2 text-md font-medium border-b-2 border-transparent hover:border-purple-500 hover:text-purple-500 focus:outline-none">
+                    SIFT Feature Extraction using RANSAC
+                </button>
+            </div>
+
+            <div id="content-stitching" class="module4-tab-content">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-6">Part 1: Image Stitching and Mobile panorama Comparison</h2>
+                <p class="text-gray-600 mb-6">Upload more sequential images from your camera and one separate panorama image created by a mobile device: </p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label for="image-upload-m4-seq" class="block text-sm font-medium text-gray-700 mb-2">1. Your Sequential Camera Images:</label>
+                        <input type="file" id="image-upload-m4-seq" accept="image/jpeg, image/png" multiple class="block w-full text-sm text-gray-500
+                            file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0
+                            file:text-sm file:font-semibold file:bg-purple-100 file:text-purple-700
+                            hover:file:bg-purple-200 cursor-pointer
+                        ">
+                    </div>
+                    <div>
+                        <label for="image-upload-m4-ref" class="block text-sm font-medium text-gray-700 mb-2">2. Mobile Reference Panorama:</label>
+                        <input type="file" id="image-upload-m4-ref" accept="image/jpeg, image/png" class="block w-full text-sm text-gray-500
+                            file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0
+                            file:text-sm file:font-semibold file:bg-purple-100 file:text-purple-700
+                            hover:file:bg-purple-200 cursor-pointer
+                        ">
+                    </div>
+                </div>
+
+                <button id="stitch-compare-button" disabled class="mt-4 w-full bg-purple-600 text-white p-3 rounded-lg font-semibold hover:bg-purple-700 transition duration-150 disabled:bg-gray-400">
+                    Run Stitching and Comparison
+                </button>
+
+                <div id="stitched-output" class="mt-6 flex justify-center">
+                    <div class="image-container w-full max-w-4xl min-h-64" id="placeholder-text">
+                         <p class="text-sm text-gray-500 p-4">Upload all required images to enable the comparison button.</p>
+                    </div>
+                </div>
+                
+                
+
+            </div>
+
+            <div id="content-siftransac" class="module4-tab-content hidden p-6">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-6">Part 2: SIFT Feature Extraction using RANSAC Comparison</h2>
+                
+                <p class="text-gray-700 mb-4">Upload two images to compare the performance and matches generated by the OpenCV SIFT function versus the SIFT from Scratch implementation including RANSAC optimization.</p>
+
+                <label for="image-upload-sift" class="block text-sm font-medium text-gray-700 mb-2">Upload Two Overlapping Images:</label>
+                <input type="file" id="image-upload-sift" accept="image/jpeg, image/png" multiple class="block w-full text-sm text-gray-500
+                    file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0
+                    file:text-sm file:font-semibold file:bg-purple-100 file:text-purple-700
+                    hover:file:bg-purple-200 cursor-pointer
+                ">
+                <button id="sift-compare-button" disabled class="mt-4 w-full bg-purple-600 text-white p-3 rounded-lg font-semibold hover:bg-purple-700 transition duration-150 disabled:bg-gray-400">
+                    Run SIFT Comparison
+                </button>
+                <p id="sift-status" class="text-sm text-center text-red-500 hidden mt-2">Processing...</p>
+
+                <div id="sift-results" class="mt-8 space-y-8">
+                    <div id="sift-metrics-container" class="hidden">
+                        <h3 class="text-xl font-semibold text-gray-700 mb-3">Comparison Metrics</h3>
+                        <div class="overflow-x-auto bg-gray-50 p-4 rounded-lg border">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-100">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Metric</th>
+                                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">OpenCV (Baseline)</th>
+                                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Scratch Implementation</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="sift-metrics-table" class="bg-white divide-y divide-gray-200">
+                                    </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div id="sift-visuals-container" class="hidden">
+                         <h3 class="text-xl font-semibold text-gray-700 mb-3">Feature Match Visualization (First 50 Inliers)</h3>
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                            <div class="p-3 border rounded-lg bg-white">
+                                <p class="text-sm font-semibold mb-2 text-center text-purple-600">OpenCV Matches (RANSAC Filtered)</p>
+                                <img id="opencv-matches-img" class="result-image" src="" alt="OpenCV SIFT Matches">
+                            </div>
+                            <div class="p-3 border rounded-lg bg-white">
+                                <p class="text-sm font-semibold mb-2 text-center text-purple-600">Scratch SIFT Matches (RANSAC Filtered)</p>
+                                <img id="scratch-matches-img" class="result-image" src="" alt="Scratch SIFT Matches">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        // --- Tab Logic ---
+        function showModule4Tab(tabId) {
+            // Hide all content divs
+            document.querySelectorAll('.module4-tab-content').forEach(div => {
+                div.classList.add('hidden');
+            });
+            // Deactivate all buttons
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('active');
+            });
+
+            // Show the selected content and add padding back
+            const contentDiv = document.getElementById(`content-${tabId}`);
+            contentDiv.classList.remove('hidden');
+            
+            // Activate the selected button
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+        }
+        
+        // Initialize the correct tab
+        document.addEventListener('DOMContentLoaded', () => {
+            showModule4Tab('stitching');
+        });
+
+
+        // --- Part 1: Image Stitching & Comparison Logic (Server Communication) ---
+        const fileInputSeq = document.getElementById('image-upload-m4-seq');
+        const fileInputRef = document.getElementById('image-upload-m4-ref');
+        const stitchCompareButton = document.getElementById('stitch-compare-button');
+        const stitchedOutputDiv = document.getElementById('stitched-output');
+
+        let sequentialFiles = [];
+        let referenceFile = null;
+        
+        function updateStitchButtonStatus() {
+            const seqCount = sequentialFiles.length;
+            stitchCompareButton.disabled = !(seqCount >= 2 && referenceFile !== null);
+            
+            let statusText = '';
+            if (seqCount < 2) {
+                statusText = 'Please select at least 2 sequential images.';
+            } else if (referenceFile === null) {
+                statusText = 'Please select the mobile reference panorama.';
+            } else {
+                 statusText = `Ready to process ${seqCount} sequential images and 1 reference image.`;
+            }
+            stitchedOutputDiv.innerHTML = `<p class="text-sm text-gray-500 p-4">${statusText}</p>`;
+        }
+
+        fileInputSeq.addEventListener('change', (e) => {
+            sequentialFiles = Array.from(e.target.files);
+            updateStitchButtonStatus();
+        });
+
+        fileInputRef.addEventListener('change', (e) => {
+            referenceFile = e.target.files[0] || null;
+            updateStitchButtonStatus();
+        });
+
+        stitchCompareButton.addEventListener('click', processStitchingComparison);
+
+        async function processStitchingComparison() {
+            if (sequentialFiles.length < 2 || referenceFile === null) return;
+
+            stitchCompareButton.disabled = true;
+            
+            stitchedOutputDiv.innerHTML = '<div class="w-full text-center p-8"><svg class="animate-spin h-8 w-8 text-purple-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg><p class="text-purple-600 font-semibold mt-2">Stitching and comparison in progress on server...</p><p class="text-xs text-gray-500 mt-1">This may take a moment due to complex image processing.</p></div>';
+
+            const formData = new FormData();
+            sequentialFiles.forEach(file => {
+                formData.append('sequential_files', file); 
+            });
+            formData.append('reference_file', referenceFile);
+
+            try {
+                const response = await fetch('/stitch_compare', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Unknown server error during comparison.');
+                }
+                
+                displayComparisonResult(data.comparison_image_data, data.message);
+
+            } catch (error) {
+                console.error("Stitching/Comparison failed:", error);
+                stitchedOutputDiv.innerHTML = `<div class="w-full text-center p-8 bg-red-50 border border-red-300 rounded-lg"><p class="text-red-600 font-semibold">Stitching Failed!</p><p class="text-sm text-gray-700 mt-2">${error.message}</p><p class="text-xs text-gray-500 mt-1">Ensure the Python server is running and images have sufficient overlap.</p></div>`;
+            } finally {
+                stitchCompareButton.disabled = false;
+            }
+        }
+
+        function displayComparisonResult(base64Image, message) {
+            stitchedOutputDiv.innerHTML = '';
+            
+            // Container for the combined image and results text
+            const containerDiv = document.createElement('div');
+            containerDiv.className = 'w-full max-w-4xl mx-auto mt-4 grid grid-cols-1 md:grid-cols-2 gap-4';
+
+            // Left side: Combined Image (Stitched + Reference, already sized equally on server)
+            const imageWrapper = document.createElement('div');
+            imageWrapper.className = 'flex justify-center items-center p-3 bg-white rounded-lg shadow-xl border border-gray-200';
+            
+            const imgElement = document.createElement('img');
+            imgElement.src = `data:image/jpeg;base64,${base64Image}`;
+            imgElement.alt = "Stitched Comparison Panorama";
+            // The image is already a combined stitch/reference, setting max-width 100% will make it fit the column.
+            imgElement.className = 'max-w-full h-auto rounded-lg'; 
+            
+            imageWrapper.appendChild(imgElement);
+            containerDiv.appendChild(imageWrapper);
+            
+            // Right side: Summary Text
+            const summaryDiv = document.createElement('div');
+            summaryDiv.className = 'p-4 bg-purple-50 border border-purple-300 rounded-lg text-sm text-purple-800 flex flex-col justify-center';
+            summaryDiv.innerHTML = `<p class="font-semibold">Comparison Complete!</p><p>${message}</p>`;
+            containerDiv.appendChild(summaryDiv);
+
+            stitchedOutputDiv.appendChild(containerDiv);
+        }
+
+
+        // --- Part 2: SIFT Comparison Logic (Server Communication) ---
+
+        const fileInputSift = document.getElementById('image-upload-sift');
+        const siftCompareButton = document.getElementById('sift-compare-button');
+        const siftStatus = document.getElementById('sift-status');
+        const siftMetricsContainer = document.getElementById('sift-metrics-container');
+        const siftVisualsContainer = document.getElementById('sift-visuals-container');
+        const siftMetricsTable = document.getElementById('sift-metrics-table');
+        const opencvMatchesImg = document.getElementById('opencv-matches-img');
+        const scratchMatchesImg = document.getElementById('scratch-matches-img');
+        
+        let imageFilesSift = [];
+
+        fileInputSift.addEventListener('change', (e) => {
+            imageFilesSift = Array.from(e.target.files);
+            siftCompareButton.disabled = imageFilesSift.length !== 2;
+            siftMetricsContainer.classList.add('hidden');
+            siftVisualsContainer.classList.add('hidden');
+        });
+
+        siftCompareButton.addEventListener('click', runSiftComparison);
+
+        async function runSiftComparison() {
+            if (imageFilesSift.length !== 2) return;
+
+            siftCompareButton.disabled = true;
+            siftStatus.classList.remove('hidden');
+            siftStatus.textContent = "Running SIFT comparison...";
+            siftMetricsContainer.classList.add('hidden');
+            siftVisualsContainer.classList.add('hidden');
+            siftMetricsTable.innerHTML = '';
+            opencvMatchesImg.src = '';
+            scratchMatchesImg.src = '';
+
+
+            const formData = new FormData();
+            imageFilesSift.forEach(file => {
+                formData.append('files', file); 
+            });
+
+            try {
+                const response = await fetch('/sift_compare', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Unknown server error during SIFT comparison.');
+                }
+                
+                // 1. Display Metrics
+                displaySiftMetrics(data.metrics);
+                
+                // 2. Display Visualizations
+                displaySiftVisuals(data.images);
+
+                siftStatus.textContent = data.status;
+
+            } catch (error) {
+                console.error("SIFT comparison failed:", error);
+                siftStatus.textContent = `Error: ${error.message}. Check Python server console for details.`;
+            } finally {
+                siftCompareButton.disabled = false;
+                setTimeout(() => siftStatus.classList.add('hidden'), 10000); 
+            }
+        }
+
+        function displaySiftMetrics(metrics) {
+            const rowData = [
+                { label: 'Keypoints Found (Image 1)', opencv: metrics.kp1_opencv, scratch: metrics.kp1_scratch },
+                { label: 'Keypoints Found (Image 2)', opencv: metrics.kp2_opencv, scratch: metrics.kp2_scratch },
+                { label: 'Matches (Ratio Test)', opencv: metrics.matches_opencv, scratch: metrics.matches_scratch },
+                { label: 'Inliers (RANSAC Filtered)', opencv: metrics.inliers_opencv, scratch: metrics.inliers_scratch },
+                { label: 'Total Compute Time (s)', opencv: metrics.time_opencv.toFixed(3), scratch: metrics.time_scratch.toFixed(3) },
+            ];
+
+            siftMetricsTable.innerHTML = rowData.map(row => `
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${row.label}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-mono text-purple-600">${row.opencv}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-mono text-purple-600">${row.scratch}</td>
+                </tr>
+            `).join('');
+
+            siftMetricsContainer.classList.remove('hidden');
+        }
+
+        function displaySiftVisuals(images) {
+            if (images.opencv_matches) {
+                opencvMatchesImg.src = `data:image/jpeg;base64,${images.opencv_matches}`;
+            } else {
+                 opencvMatchesImg.src = '';
+                 opencvMatchesImg.alt = 'No OpenCV matches found.';
+            }
+
+            if (images.scratch_matches) {
+                scratchMatchesImg.src = `data:image/jpeg;base64,${images.scratch_matches}`;
+            } else {
+                 scratchMatchesImg.src = '';
+                 scratchMatchesImg.alt = 'No Scratch SIFT matches found.';
+            }
+            
+            siftVisualsContainer.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Module 7: Calibration and Stereo Vision</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f9fb;
+        }
+        .content-card {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            border-radius: 1rem;
+        }
+        /* Tab Styling */
+        .tab-button-m7 {
+            transition: all 0.3s ease;
+            white-space: nowrap; /* Prevent button wrapping */
+        }
+        .tab-button-m7.active {
+            border-color: #a78bfa; /* Pastel Purple 400 */
+            color: #8b5cf6; /* Violet 600 */
+            background-color: #f3e8ff; /* Purple 100 */
+        }
+        .math-display {
+            font-family: monospace;
+            white-space: pre-wrap;
+            font-size: 0.875rem;
+            color: #312e81;
+            background-color: #eef2ff;
+            padding: 12px;
+            border-radius: 6px;
+        }
+        #canvas-left, #canvas-right {
+             min-width: 300px; 
+             min-height: 200px;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 min-h-screen">
+
+    <header class="mb-8 max-w-6xl mx-auto">
+        <h1 class="text-4xl font-extrabold text-gray-900 text-center">Module 7: Calibration and Stereo Vision</h1>
+        <button onclick="window.location.href='index.html'" class="mt-4 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition duration-150">
+            &larr; Back to Dashboard
+        </button>
+    </header>
+
+    <main class="max-w-6xl mx-auto">
+        <div class="bg-white p-6 md:p-8 rounded-xl content-card border-t-4 border-purple-500">
+            
+            <div class="flex flex-wrap justify-center mb-6 border-b border-gray-200 gap-2 overflow-x-auto">
+                <button id="tab-calib-stereo" onclick="showModule7Tab('calib-stereo')" class="tab-button-m7 active px-3 py-2 text-md font-medium border-b-2 border-transparent hover:border-purple-500 hover:text-purple-500 focus:outline-none">
+                    Calibrated Stereo Object Size Estimation
+                </button>
+                <button id="tab-uncalib-deriv" onclick="showModule7Tab('uncalib-deriv')" class="tab-button-m7 px-3 py-2 text-md font-medium border-b-2 border-transparent hover:border-purple-500 hover:text-purple-500 focus:outline-none">
+                    Derivation: Object Size from Uncalibrated Stereo
+                </button>
+                <button id="tab-pose-hand" onclick="showModule7Tab('pose-hand')" class="tab-button-m7 px-3 py-2 text-md font-medium border-b-2 border-transparent hover:border-purple-500 hover:text-purple-500 focus:outline-none">
+                    Real-Time Pose Detection and Hand Tracking
+                </button>
+            </div>
+
+            <div id="module7-content-container" class="space-y-8">
+
+                <div id="content-calib-stereo" class="module7-tab-content p-4 bg-gray-50 rounded-lg border">
+                    <h2 class="text-2xl font-semibold text-gray-800 mb-4">Calibrated Stereo Object Size Estimation</h2>
+                    <p class="text-gray-700 mb-4">Upload your stereo image pair, and select points to compute depth from disparity to estimate the real-world size of your object.</p>
+
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4 items-center">
+                        <div class="md:col-span-1">
+                            <label for="input-baseline" class="block text-sm font-medium text-gray-700 mb-2">1. Baseline (cm):</label>
+                            <input type="number" id="input-baseline" value="0" step="0.1" required class="p-2 border border-gray-300 rounded-lg w-full focus:ring-purple-500 focus:border-purple-500">
+                        </div>
+                        <div class="md:col-span-1">
+                            <label for="image-upload-left" class="block text-sm font-medium text-gray-700 mb-2">2. Upload Left Image:</label>
+                            <input type="file" id="image-upload-left" accept="image/*" class="block w-full text-sm text-gray-500 file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200 cursor-pointer">
+                        </div>
+                        <div class="md:col-span-1">
+                            <label for="image-upload-right" class="block text-sm font-medium text-gray-700 mb-2">3. Upload Right Image:</label>
+                            <input type="file" id="image-upload-right" accept="image/*" class="block w-full text-sm text-gray-500 file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200 cursor-pointer">
+                        </div>
+                        <div class="md:col-span-1">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">4. Actual Dimensions (cm):</label>
+                            <div class="flex space-x-2">
+                                <div class="w-1/2">
+                                    <label for="input-width-true" class="text-xs font-medium text-gray-600">Width:</label>
+                                    <input type="number" id="input-width-true" value="0" step="0.1" class="p-1 border border-gray-300 rounded-lg w-full text-sm">
+                                </div>
+                                <div class="w-1/2">
+                                    <label for="input-height-true" class="text-xs font-medium text-gray-600">Height:</label>
+                                    <input type="number" id="input-height-true" value="0" step="0.1" class="p-1 border border-gray-300 rounded-lg w-full text-sm">
+                                </div>
+                            </div>
+                        </div>
+                        </div>
+                    
+                    <label class="block text-sm font-medium text-gray-700 mt-4 mb-2">5. Click four points (L1, R1, L2, R2) on the object:</label>
+                    <p class="text-xs text-gray-500 mb-2 p-2 bg-purple-50 rounded-md">
+                        For a rectangular box, ensure you click P1 (L1/R1) on the Top-Left corner and P2 (L2/R2) on the Bottom-Right corner to accurately measure both Width (ΔX) and Height (ΔY) simultaneously.
+                    </p>
+                    <div id="stereo-canvas-container" class="flex flex-col lg:flex-row gap-4">
+                        <canvas id="canvas-left" width="400" height="300" class="flex-1 bg-white border border-gray-300 rounded-lg cursor-crosshair"></canvas>
+                        <canvas id="canvas-right" width="400" height="300" class="flex-1 bg-white border border-gray-300 rounded-lg cursor-crosshair"></canvas>
+                    </div>
+                    
+                    <button id="calculate-stereo-button" disabled class="mt-4 w-full bg-purple-600 text-white p-3 rounded-lg font-semibold hover:bg-purple-700 transition duration-150 disabled:bg-gray-400">
+                        Calculate Depth, Dimensions, and Error
+                    </button>
+                    <button id="reset-stereo-button" class="mt-2 w-full bg-gray-200 text-gray-700 p-3 rounded-lg hover:bg-gray-300 transition duration-150">
+                        Reset
+                    </button>
+                    
+                    <div id="stereo-results" class="mt-6 p-4 bg-white rounded-lg border border-gray-200">
+                        <p class="text-sm font-medium text-gray-700 mb-2">Results: </p>
+                        <div id="console-stereo-results" class="math-display">
+                            Awaiting input...
+                        </div>
+                    </div>
+
+                </div>
+
+                <div id="content-uncalib-deriv" class="module7-tab-content hidden p-4 bg-gray-50 rounded-lg border">
+                    <h2 class="text-2xl font-semibold text-gray-800 mb-4">Derivation: Object Size from Uncalibrated Stereo</h2>
+                    <p class="text-gray-700 mb-4">This section covers the derivation necessary to estimate the size of an object. The solution documents are embedded below. Note: browser compatibility for PDF embedding may vary.
+</p>
+                    <div class="math-display">
+                        # Placeholder for the derivation steps using Fundamental/Essential matrix principles.
+                    </div>
+                </div>
+
+                <div id="content-pose-hand" class="module7-tab-content hidden p-4 bg-gray-50 rounded-lg border">
+                    <h2 class="text-2xl font-semibold text-gray-800 mb-4">Real-Time Pose Detection and Hand Tracking</h2>
+                    <p class="text-gray-700 mb-4">Click Start Pose & Hand Tracking to enable your webcam, which displays live pose and hand keypoints on-screen and automatically save all landmark coordinates to a CSV file.</p>
+                    
+                    <div id="webcam-info-pose" class="p-4 bg-yellow-100 border border-yellow-300 rounded-lg text-sm text-yellow-800 mb-6 text-center">
+                        <p class="font-bold">Pose Tracking Status</p>
+                        <p id="status-message-pose" class="mb-3">Click the button to start the stream and begin data collection.</p>
+                        <div id="control-container-pose">
+                            <button id="access-pose-btn" onclick="togglePoseTracking()" class="px-6 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition duration-150">
+                                Start Pose & Hand Tracking
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="tracking-pose-feed" class="w-full h-auto bg-gray-200 flex justify-center items-center rounded-lg overflow-hidden border-4 border-gray-400 relative">
+                        <img id="video-stream-pose" src="" alt="Live Pose Tracking Feed" class="result-image" style="max-width: 100%; min-height: 250px; display: none;">
+                        <p id="video-placeholder-pose" class="p-4 text-gray-600">Video feed offline. Click 'Start Pose & Hand Tracking' above.</p>
+                    </div>
+                </div>
+
+            </div>
+            
+        </div>
+    </main>
+
+    <script>
+        // --- Pose/Hand Tracking Logic (Existing) ---
+
+        const accessPoseBtn = document.getElementById('access-pose-btn');
+        const statusMessagePose = document.getElementById('status-message-pose');
+        const videoStreamPose = document.getElementById('video-stream-pose');
+        const videoPlaceholderPose = document.getElementById('video-placeholder-pose');
+        const trackingPoseFeed = document.getElementById('tracking-pose-feed');
+
+        let poseTrackingState = 'STOPPED';
+
+        function updatePoseStatus(message, state) {
+            poseTrackingState = state;
+            statusMessagePose.textContent = message;
+
+            accessPoseBtn.classList.remove('bg-green-600', 'hover:bg-green-700', 'bg-red-600', 'hover:bg-red-700');
+            if (state === 'STOPPED') {
+                accessPoseBtn.textContent = "Start Pose & Hand Tracking";
+                accessPoseBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+                trackingPoseFeed.classList.add('border-gray-400');
+                trackingPoseFeed.classList.remove('border-green-600');
+            } else {
+                accessPoseBtn.textContent = "Stop Tracking & Save CSV";
+                accessPoseBtn.classList.add('bg-red-600', 'hover:bg-red-700');
+                trackingPoseFeed.classList.remove('border-gray-400');
+                trackingPoseFeed.classList.add('border-green-600');
+            }
+        }
+
+        function togglePoseTracking() {
+            if (poseTrackingState === 'STOPPED') {
+                startPoseTracking();
+            } else {
+                stopPoseTracking();
+            }
+        }
+
+        function startPoseTracking() {
+            updatePoseStatus("Stream active. Tracking and saving data to CSV...", 'STREAMING');
+            
+            // Clear the current image and start the new stream
+            videoStreamPose.src = "/video_feed_pose_hand" + '?t=' + Date.now();
+            videoStreamPose.style.display = 'block';
+            videoPlaceholderPose.style.display = 'none';
+        }
+
+        function stopPoseTracking() {
+            if (poseTrackingState === 'STOPPED') return;
+            
+            // Stopping the stream by clearing the image source
+            videoStreamPose.src = "";
+            videoStreamPose.style.display = 'none';
+            videoPlaceholderPose.style.display = 'block';
+
+            updatePoseStatus("Tracking stopped. Data saved to pose_landmarks_m7.csv", 'STOPPED');
+        }
+
+        // --- Original Tab Logic (Modified to stop tracking on switch) ---
+        function showModule7Tab(tabId) {
+            // Hide all content divs
+            document.querySelectorAll('.module7-tab-content').forEach(div => {
+                div.classList.add('hidden');
+            });
+            // Deactivate all buttons
+            document.querySelectorAll('.tab-button-m7').forEach(button => {
+                button.classList.remove('active');
+            });
+            
+            // Custom logic to stop pose tracking when switching away
+            if (tabId !== 'pose-hand') {
+                stopPoseTracking(); 
+            }
+
+            // Show the selected content
+            document.getElementById(`content-${tabId}`).classList.remove('hidden');
+            // Activate the selected button
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+        }
+        
+        // --- STEREO CALIBRATION LOGIC (NEW) ---
+
+        // --- Camera Intrinsics (Hardcoded, but derived from camera calibration) ---
+        const FX_STEREO = 3081.84216;
+        const FY_STEREO = 3077.33506;
+        
+        // Conversion factor for meter to centimeter (for display only)
+        const M_TO_CM = 100; 
+        const CM_TO_M = 1 / 100.0; // Added for ground truth conversion
+
+        // --- UI Elements ---
+        const canvasLeft = document.getElementById('canvas-left');
+        const ctxLeft = canvasLeft.getContext('2d');
+        const canvasRight = document.getElementById('canvas-right');
+        const ctxRight = canvasRight.getContext('2d');
+
+        const fileInputLeft = document.getElementById('image-upload-left');
+        const fileInputRight = document.getElementById('image-upload-right');
+        const baselineInput = document.getElementById('input-baseline');
+        
+        // New UI Elements for Error Calculation
+        const widthTrueInput = document.getElementById('input-width-true');
+        const heightTrueInput = document.getElementById('input-height-true');
+
+        
+        const calculateStereoButton = document.getElementById('calculate-stereo-button');
+        const resetStereoButton = document.getElementById('reset-stereo-button');
+        const consoleStereoResults = document.getElementById('console-stereo-results');
+
+        let originalImageLeft = null;
+        let originalImageRight = null;
+        let pointsLeft = []; // [L1, L2]
+        let pointsRight = []; // [R1, R2]
+        const MAX_CANVAS_WIDTH_STEREO = 400; 
+
+        // --- Initialization and Event Listeners ---
+        function initStereoListeners() {
+            fileInputLeft.addEventListener('change', (e) => handleStereoImageUpload(e, 'left'));
+            fileInputRight.addEventListener('change', (e) => handleStereoImageUpload(e, 'right'));
+            canvasLeft.addEventListener('click', (e) => handleStereoCanvasClick(e, 'left'));
+            canvasRight.addEventListener('click', (e) => handleStereoCanvasClick(e, 'right'));
+            calculateStereoButton.addEventListener('click', calculateStereoDimension);
+            calculateStereoButton.textContent = "Calculate Depth, Dimensions, and Error"; 
+            resetStereoButton.addEventListener('click', resetStereoModule);
+            
+            resetStereoModule();
+        }
+
+        function resetStereoModule() {
+            pointsLeft = [];
+            pointsRight = [];
+            originalImageLeft = null;
+            originalImageRight = null;
+            drawCanvasPlaceholder(canvasLeft, ctxLeft, "Upload Left Image");
+            drawCanvasPlaceholder(canvasRight, ctxRight, "Upload Right Image");
+            calculateStereoButton.disabled = true;
+            consoleStereoResults.innerHTML = 'Awaiting input...';
+            if(fileInputLeft) fileInputLeft.value = '';
+            if(fileInputRight) fileInputRight.value = '';
+            if(baselineInput) baselineInput.value = '0';
+            if(widthTrueInput) widthTrueInput.value = '0'; 
+            if(heightTrueInput) heightTrueInput.value = '0'; 
+        }
+
+        function drawCanvasPlaceholder(canvas, ctx, text) {
+            // Use client dimensions to set intrinsic size before image load
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width > 0 ? rect.width : MAX_CANVAS_WIDTH_STEREO;
+            canvas.height = rect.height > 0 ? rect.height : 300;
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.textAlign = 'center';
+            ctx.fillStyle = '#6b7280';
+            ctx.font = '16px Inter';
+            ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+        }
+
+        function handleStereoImageUpload(e, side) {
+            if (e.target.files.length === 0) {
+                if (side === 'left') { originalImageLeft = null; } 
+                else { originalImageRight = null; }
+                resetStereoModule(); // Simplified: reset everything on image change
+                return;
+            }
+
+            const file = e.target.files[0];
+            const reader = new FileReader();
+
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = () => {
+                    if (side === 'left') { originalImageLeft = img; } 
+                    else { originalImageRight = img; }
+                    pointsLeft = [];
+                    pointsRight = [];
+                    drawStereoImages();
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function drawStereoImages() {
+            // Left Image
+            if (originalImageLeft) drawInteractiveImage(originalImageLeft, canvasLeft, ctxLeft, pointsLeft, 'L');
+            else drawCanvasPlaceholder(canvasLeft, ctxLeft, "Upload Left Image");
+
+            // Right Image
+            if (originalImageRight) drawInteractiveImage(originalImageRight, canvasRight, ctxRight, pointsRight, 'R');
+            else drawCanvasPlaceholder(canvasRight, ctxRight, "Upload Right Image");
+            
+            // Update button state: requires images, 2 points on each, and a valid baseline
+            calculateStereoButton.disabled = !(originalImageLeft && originalImageRight && pointsLeft.length === 2 && pointsRight.length === 2);
+        }
+
+        function drawInteractiveImage(originalImg, canvas, ctx, points, prefix) {
+            // Get the current rendered width/height of the canvas (dictated by flex-1)
+            const rect = canvas.getBoundingClientRect();
+            let width = rect.width;
+            
+            // Calculate the proportional height based on the new width and original image ratio
+            const ratio = originalImg.height / originalImg.width;
+
+            // **CRITICAL**: Reset the canvas's intrinsic size (width/height) to match its *rendered* size 
+            // so that the internal drawing buffer matches the external display area.
+            canvas.width = width;
+            canvas.height = width * ratio; // Maintain aspect ratio
+
+            ctx.drawImage(originalImg, 0, 0, canvas.width, canvas.height);
+
+            points.forEach((p, index) => {
+                ctx.beginPath();
+                ctx.fillStyle = index === 0 ? '#3b82f6' : '#ef4444'; // Blue for P1, Red for P2
+                ctx.arc(p.displayX, p.displayY, 5, 0, Math.PI * 2); 
+                ctx.fill();
+
+                ctx.fillStyle = '#1f2937';
+                ctx.font = '14px Inter';
+                ctx.fillText(`${prefix}${index + 1}`, p.displayX + 10, p.displayY - 5);
+            });
+
+            if (points.length === 2) {
+                ctx.beginPath();
+                ctx.strokeStyle = '#a78bfa'; /* Pastel Purple Line */
+                ctx.lineWidth = 2;
+                ctx.moveTo(points[0].displayX, points[0].displayY); 
+                ctx.lineTo(points[1].displayX, points[1].displayY); 
+                ctx.stroke();
+            }
+        }
+
+        function handleStereoCanvasClick(e, side) {
+            let originalImg, points;
+            if (side === 'left') {
+                originalImg = originalImageLeft;
+                points = pointsLeft;
+            } else {
+                originalImg = originalImageRight;
+                points = pointsRight;
+            }
+
+            if (!originalImg) return;
+
+            const canvas = side === 'left' ? canvasLeft : canvasRight;
+            
+            // Use the canvas's intrinsic drawing buffer dimensions for scaling
+            const scaleFactorX = originalImg.width / canvas.width; 
+            const scaleFactorY = originalImg.height / canvas.height; 
+
+            // The actual pixel coordinates on the *original high-res image*
+            const x = e.offsetX * scaleFactorX;
+            const y = e.offsetY * scaleFactorY;
+            
+            // The display coordinates on the *low-res canvas* (used for drawing the dot)
+            const displayX = e.offsetX;
+            const displayY = e.offsetY;
+
+            if (points.length < 2) {
+                points.push({ x: x, y: y, displayX: displayX, displayY: displayY });
+            } else {
+                points.length = 0; // Clear all previous points
+                points.push({ x: x, y: y, displayX: displayX, displayY: displayY });
+            }
+
+            drawStereoImages();
+            
+            if (pointsLeft.length === 2 && pointsRight.length === 2) {
+                 // Update console to prompt user to click the button
+                 consoleStereoResults.innerHTML = 'All 4 points selected. Click **Calculate Depth, Dimensions, and Error** to view results.';
+            } else {
+                // Determine which point is being clicked for the ongoing status update
+                let l1 = pointsLeft[0] ? `L1: (${pointsLeft[0].x.toFixed(1)}, ${pointsLeft[0].y.toFixed(1)})` : '';
+                let r1 = pointsRight[0] ? `R1: (${pointsRight[0].x.toFixed(1)}, ${pointsRight[0].y.toFixed(1)})` : '';
+                consoleStereoResults.innerHTML = `Need two points in both images (L1, R1, L2, R2).\nCurrently have:\n${l1}\n${r1}`;
+            }
+        }
+
+        async function calculateStereoDimension() {
+            // Read B in cm, convert to m for the server payload
+            const B_cm = parseFloat(baselineInput.value);
+            const B_m = B_cm * CM_TO_M;
+            
+            // Read True Dimensions in cm, convert to m for the server payload
+            const W_true_cm = parseFloat(widthTrueInput.value);
+            const W_true_m = W_true_cm * CM_TO_M;
+            const H_true_cm = parseFloat(heightTrueInput.value);
+            const H_true_m = H_true_cm * CM_TO_M;
+
+
+            if (!originalImageLeft || !originalImageRight || pointsLeft.length !== 2 || pointsRight.length !== 2 || isNaN(B_cm) || B_cm <= 0) {
+                 consoleStereoResults.innerHTML = '<span style="color:red; font-weight:bold;">Error: Please ensure images are uploaded, 4 points are selected, and the Baseline (B) is greater than 0.</span>';
+                 calculateStereoButton.disabled = true;
+                 return;
+            }
+
+            const L1 = pointsLeft[0];
+            const L2 = pointsLeft[1];
+            const R1 = pointsRight[0];
+            const R2 = pointsRight[1];
+
+            calculateStereoButton.disabled = true;
+            consoleStereoResults.innerHTML = 'Calculating...';
+
+            try {
+                const response = await fetch("/compute_stereo", {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({
+                        L1: {x: L1.x, y: L1.y},
+                        R1: {x: R1.x, y: R1.y},
+                        L2: {x: L2.x, y: L2.y},
+                        R2: {x: R2.x, y: R2.y},
+                        B: B_m, // Send Baseline in meters
+                        W_true: W_true_m, // Send True Width in meters
+                        H_true: H_true_m  // Send True Height in meters
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) throw new Error(data.error || 'Server computation failed.');
+
+                // --- Client-side conversion to cm for display ---
+                const Z_cm = data.Z_avg * M_TO_CM;
+                const dX_cm = data.dX_estimated * M_TO_CM;
+                const dY_cm = data.dY_estimated * M_TO_CM;
+                const error_W_cm = data.error_W * M_TO_CM;
+                const error_H_cm = data.error_H * M_TO_CM;
+
+                // --- CALCULATE MINIMUM ERROR (Module 1 logic: min(Ew, Eh)) ---
+                let finalError = 0.0;
+                let errorCount = 0;
+                let errors = [];
+
+                if (W_true_cm > 0) {
+                    errors.push(error_W_cm);
+                    errorCount++;
+                }
+                if (H_true_cm > 0) {
+                    errors.push(error_H_cm);
+                    errorCount++;
+                }
+                
+                // If both errors were calculated, use the MINIMUM of the two (Module 1 style)
+                if (errorCount === 2) {
+                    finalError = Math.min(errors[0], errors[1]);
+                } 
+                // If only one ground truth was provided, use that single error
+                else if (errorCount === 1) {
+                    finalError = errors[0];
+                }
+
+
+                // --- GENERATE CONSOLE-LIKE OUTPUT (FIXED ERROR DISPLAY STYLE) ---
+                let errorLine = "";
+                if (errorCount > 0) {
+                    // Removed <span> and bold to match required style (non-bold, default color)
+                    errorLine = `\nError = ${finalError.toFixed(4)} cm`;
+                }
+
+                consoleStereoResults.innerHTML = 
+                    `L1(x,y): (${L1.x.toFixed(1)}, ${L1.y.toFixed(1)}) | R1(x,y): (${R1.x.toFixed(1)}, ${R1.y.toFixed(1)})
+L2(x,y): (${L2.x.toFixed(1)}, ${L2.y.toFixed(1)}) | R2(x,y): (${R2.x.toFixed(1)}, ${R2.y.toFixed(1)})
+
+Baseline (B): ${B_cm.toFixed(2)} cm
+Disparity 1 (d1): ${data.disparity_1.toFixed(2)} px
+Disparity 2 (d2): ${data.disparity_2.toFixed(2)} px
+
+Z1 (Depth P1): ${(data.Z1 * M_TO_CM).toFixed(4)} cm
+Z2 (Depth P2): ${(data.Z2 * M_TO_CM).toFixed(4)} cm
+Average Z: ${Z_cm.toFixed(4)} cm
+Est. Width (\u0394X): ${dX_cm.toFixed(4)} cm
+Est. Height (\u0394Y): ${dY_cm.toFixed(4)} cm
+${errorLine}`;
+                // -------------------------------------
+
+            } catch (error) {
+                console.error("Calculation error:", error);
+                consoleStereoResults.innerHTML = `<p class="text-red-600 font-semibold">Error: ${error.message} (Check Baseline/Points).</p>`;
+            } finally {
+                calculateStereoButton.disabled = false;
+            }
+        }
+        
+        // --- END STEREO CALIBRATION LOGIC ---
+
+
+        document.addEventListener('DOMContentLoaded', () => {
+            showModule7Tab('calib-stereo'); // Show the first tab by default
+            updatePoseStatus("Click the button to start the stream and begin data collection.", 'STOPPED');
+            initStereoListeners(); // Initialize the new stereo logic
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Computer Vision Assignments Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f9fb;
+        }
+        .module-card {
+            transition: transform 0.2s, box-shadow 0.2s;
+            border-radius: 1rem;
+        }
+        .module-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(167, 139, 250, 0.2), 0 8px 10px -6px rgba(167, 139, 250, 0.1); /* Pastel Purple Shadow */
+        }
+        .math-display {
+            font-size: 1.125rem;
+            font-family: serif;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 min-h-screen">
+
+    <header class="max-w-4xl mx-auto mb-10 text-center">
+        <h1 class="text-5xl font-extrabold text-gray-900 mb-3">Computer Vision Assignments</h1>
+    </header>
+    
+    <main class="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+        
+        <a href="module1.html" class="module-card block bg-white p-6 border-t-4 border-purple-500 shadow-xl">
+            <h2 class="text-2xl font-bold text-gray-800 mb-3">Module 1</h2>
+            <h3 class="text-xl font-semibold text-purple-600 mb-4">Real World Dimension Measurement</h3>
+        </a>
+        
+        <a href="module2.html" class="module-card block bg-white p-6 border-t-4 border-purple-500 shadow-xl">
+            <h2 class="text-2xl font-bold text-gray-800 mb-3">Module 2</h2>
+            <h3 class="text-xl font-semibold text-purple-600 mb-4">Object Detection and Image Filter Simulation</h3>
+        </a>
+
+        <a href="module3.html" class="module-card block bg-white p-6 border-t-4 border-purple-500 shadow-xl">
+            <h2 class="text-2xl font-bold text-gray-800 mb-3">Module 3</h2>
+            <h3 class="text-xl font-semibold text-purple-600 mb-4">Edge and Corner Detection</h3>
+        </a>
+
+        <a href="module4.html" class="module-card block bg-white p-6 border-t-4 border-purple-500 shadow-xl">
+            <h2 class="text-2xl font-bold text-gray-800 mb-3">Module 4</h2>
+            <h3 class="text-xl font-semibold text-purple-600 mb-4">Image Stitching & Feature Extraction</h3>
+        </a>
+
+        <a href="module5-6.html" class="module-card block bg-white p-6 border-t-4 border-purple-500 shadow-xl">
+            <h2 class="text-2xl font-bold text-gray-800 mb-3">Module 5-6</h2>
+            <h3 class="text-xl font-semibold text-purple-600 mb-4">Motion & Object Tracking</h3>
+        </a>
+        
+        <a href="module7.html" class="module-card block bg-white p-6 border-t-4 border-purple-500 shadow-xl">
+            <h2 class="text-2xl font-bold text-gray-800 mb-3">Module 7</h2>
+            <h3 class="text-xl font-semibold text-purple-600 mb-4">Calibration and Stereo Vision</h3>
+        </a>
+        
+    </main>
+
+    <script>
+        function navigate(url) {
+            window.location.href = url;
+        }
+    </script>
+</body>
+</html>
