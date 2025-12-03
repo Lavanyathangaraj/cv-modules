@@ -31,7 +31,7 @@ def calculate_dimension_m1(data: Dict[str, Any]) -> Dict[str, float]:
 
         error = 0.0
         
-        # Calculate minimum error if ground truth is provided
+        # Calculate error
         if real_dX > 0 and real_dY > 0:
             error_X = abs(real_dX - dX)
             error_Y = abs(real_dY - dY)
