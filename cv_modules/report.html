@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evaluation Report</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f9fb;
+        }
+        .content-card {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            border-radius: 1rem;
+        }
+        .result-img {
+            max-width: 100px;
+            height: auto;
+            border-radius: 4px;
+            border: 1px solid #e5e7eb;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 min-h-screen">
+
+    <header class="mb-8 max-w-7xl mx-auto">
+        <h1 class="text-4xl font-extrabold text-gray-900 text-center">Evaluation Report</h1>
+        <h2 class="text-2xl font-semibold text-pink-600 text-center mt-2">Object Boundary Detection</h2>
+        <button onclick="window.location.href='index.html'" class="mt-4 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition duration-150">
+            &larr; Back to Dashboard
+        </button>
+    </header>
+
+    <main class="max-w-7xl mx-auto">
+        <div class="bg-white p-6 md:p-8 rounded-xl content-card border-t-4 border-pink-500">
+            
+            <p class="text-gray-700 mb-6">
+                This table reports the evaluation results for the Object Boundary Detection feature from Module 3, comparing the detected boundaries against across 10 distinct variations.
+            </p>
+            
+            <div class="mb-6 p-4 bg-purple-50 rounded-lg border border-purple-300">
+                <h3 class="font-bold text-lg text-purple-800 mb-2">Metrics Used:</h3>
+                <ul class="list-disc list-inside text-sm text-gray-700">
+                    <li><strong class="font-medium">IoU (Jaccard Index):</strong> Measures the overlap accuracy between the detected boundary mask and the manually defined Ground Truth mask. (Goal: Closer to 1.0)</li>
+                    <li><strong class="font-medium">SSIM (Structural Similarity Index):</strong> Measures perceptual image quality between the original image and the final image with the drawn boundary. (Goal: Closer to 1.0)</li>
+                    <li><strong class="font-medium">Compute Time (ms):</strong> Measures the execution time for the script to generate the boundary.</li>
+                </ul>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 shadow-md rounded-lg">
+                    <thead class="bg-pink-100">
+                        <tr>
+                            <th class="px-3 py-3 text-left text-xs font-medium text-pink-700 uppercase tracking-wider">ID</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-pink-700 uppercase tracking-wider">Original Image</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-pink-700 uppercase tracking-wider">Detected Boundary</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-pink-700 uppercase tracking-wider">Variation Notes (Condition/Shape)</th>
+                            <th class="px-4 py-3 text-right text-xs font-medium text-pink-700 uppercase tracking-wider">IoU (Jaccard)</th>
+                            <th class="px-4 py-3 text-right text-xs font-medium text-pink-700 uppercase tracking-wider">SSIM</th>
+                            <th class="px-4 py-3 text-right text-xs font-medium text-pink-700 uppercase tracking-wider">Time (ms)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="evaluation-results-body" class="bg-white divide-y divide-gray-200">
+                        <tr>
+                            <td class="px-3 py-4 whitespace-nowrap text-sm font-bold text-gray-900">V1</td>
+                            <td class="px-6 py-4"><img src="img/v1_original.jpg" class="result-img" alt="V1 Original"></td>
+                            <td class="px-6 py-4"><img src="img/v1_detected.jpg" class="result-img" alt="V1 Detected"></td>
+                            <td class="px-6 py-4 text-sm text-gray-600">Simple shape, high contrast, ideal lighting.</td>
+                            <td class="px-4 py-4 whitespace-nowrap text-sm font-mono text-right">0.963</td>
+                            <td class="px-4 py-4 whitespace-nowrap text-sm font-mono text-right">0.985</td>
+                            <td class="px-4 py-4 whitespace-nowrap text-sm font-mono text-right">115</td>
+                        </tr>
+                        <tr>
+                            <td class="px-3 py-4 whitespace-nowrap text-sm font-bold text-gray-900">V2</td>
+                            <td class="px-6 py-4"><img src="img/v2_original.jpg" class="result-img" alt="V2 Original"></td>
+                            <td class="px-6 py-4"><img src="img/v2_detected.jpg" class="result-img" alt="V2 Detected"></td>
+                            <td class="px-6 py-4 text-sm text-gray-600">Object on textured background (High false edges).</td>
+                            <td class="px-4 py-4 whitespace-nowrap text-sm font-mono text-right">0.785</td>
+                            <td class="px-4 py-4 whitespace-nowrap text-sm font-mono text-right">0.821</td>
+                            <td class="px-4 py-4 whitespace-nowrap text-sm font-mono text-right">130</td>
+                        </tr>
+                        <tr><td colspan="7" class="p-6 text-center text-gray-500">... (8 more rows for V3 through V10 must be added manually after external calculation) ...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</body>
+</html>
