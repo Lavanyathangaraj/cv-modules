@@ -17,12 +17,12 @@
         /* Tab Styling */
         .tab-button-m7 {
             transition: all 0.3s ease;
-            white-space: nowrap; /* Prevent button wrapping */
+            white-space: nowrap;
         }
         .tab-button-m7.active {
-            border-color: #a78bfa; /* Pastel Purple 400 */
-            color: #8b5cf6; /* Violet 600 */
-            background-color: #f3e8ff; /* Purple 100 */
+            border-color: #a78bfa;
+            color: #8b5cf6;
+            background-color: #f3e8ff;
         }
         .math-display {
             font-family: monospace;
@@ -36,6 +36,26 @@
         #canvas-left, #canvas-right {
              min-width: 300px; 
              min-height: 200px;
+        }
+        .derivation-container { /* Added styling for PDF container */
+            border: 1px solid #e5e7eb;
+            height: 700px; 
+            overflow: hidden;
+            background-color: #f9fafb;
+            border-radius: 0.5rem;
+        }
+        .pdf-embed { /* Added styling for iframe */
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        .derivation-link { /* Added styling for link */
+            display: block;
+            text-align: center;
+            margin-top: 10px;
+            font-weight: 600;
+            color: #8b5cf6;
+            text-decoration: underline;
         }
     </style>
 </head>
@@ -124,11 +144,13 @@
 
                 <div id="content-uncalib-deriv" class="module7-tab-content hidden p-4 bg-gray-50 rounded-lg border">
                     <h2 class="text-2xl font-semibold text-gray-800 mb-4">Derivation: Object Size from Uncalibrated Stereo</h2>
-                    <p class="text-gray-700 mb-4">This section covers the derivation necessary to estimate the size of an object. The solution documents are embedded below. Note: browser compatibility for PDF embedding may vary.
-</p>
-                    <div class="math-display">
-                        # Placeholder for the derivation steps using Fundamental/Essential matrix principles.
+                    <p class="text-gray-700 mb-4">This section covers the derivation to estimate the size of an object using Uncalibrated Stereo</p>
+                    <div class="derivation-container">
+                        <iframe src="module7_uncalibratedStereo.pdf" class="pdf-embed" title="Uncalibrated Stereo Derivation"></iframe>
                     </div>
+                    <a href="module7_uncalibratedStereo.pdf" target="_blank" download="module7_uncalibratedStereo.pdf" class="derivation-link">
+                        Click to Download/Open Derivation (PDF) in New Tab
+                    </a>
                 </div>
 
                 <div id="content-pose-hand" class="module7-tab-content hidden p-4 bg-gray-50 rounded-lg border">
@@ -157,7 +179,6 @@
     </main>
 
     <script>
-        // --- Pose/Hand Tracking Logic (Existing) ---
 
         const accessPoseBtn = document.getElementById('access-pose-btn');
         const statusMessagePose = document.getElementById('status-message-pose');
@@ -213,7 +234,6 @@
             updatePoseStatus("Tracking stopped. Data saved to pose_landmarks_m7.csv", 'STOPPED');
         }
 
-        // --- Original Tab Logic (Modified to stop tracking on switch) ---
         function showModule7Tab(tabId) {
             // Hide all content divs
             document.querySelectorAll('.module7-tab-content').forEach(div => {
@@ -235,15 +255,12 @@
             document.getElementById(`tab-${tabId}`).classList.add('active');
         }
         
-        // --- STEREO CALIBRATION LOGIC (NEW) ---
-
-        // --- Camera Intrinsics (Hardcoded, but derived from camera calibration) ---
         const FX_STEREO = 3081.84216;
         const FY_STEREO = 3077.33506;
         
         // Conversion factor for meter to centimeter (for display only)
         const M_TO_CM = 100; 
-        const CM_TO_M = 1 / 100.0; // Added for ground truth conversion
+        const CM_TO_M = 1 / 100.0;
 
         // --- UI Elements ---
         const canvasLeft = document.getElementById('canvas-left');
@@ -295,12 +312,11 @@
             if(fileInputLeft) fileInputLeft.value = '';
             if(fileInputRight) fileInputRight.value = '';
             if(baselineInput) baselineInput.value = '0';
-            if(widthTrueInput) widthTrueInput.value = '0'; 
-            if(heightTrueInput) heightTrueInput.value = '0'; 
+            if(widthTrueInput) widthTrueInput.value = '0';
+            if(heightTrueInput) heightTrueInput.value = '0';
         }
 
         function drawCanvasPlaceholder(canvas, ctx, text) {
-            // Use client dimensions to set intrinsic size before image load
             const rect = canvas.getBoundingClientRect();
             canvas.width = rect.width > 0 ? rect.width : MAX_CANVAS_WIDTH_STEREO;
             canvas.height = rect.height > 0 ? rect.height : 300;
@@ -316,7 +332,7 @@
             if (e.target.files.length === 0) {
                 if (side === 'left') { originalImageLeft = null; } 
                 else { originalImageRight = null; }
-                resetStereoModule(); // Simplified: reset everything on image change
+                resetStereoModule(); 
                 return;
             }
 
@@ -351,23 +367,19 @@
         }
 
         function drawInteractiveImage(originalImg, canvas, ctx, points, prefix) {
-            // Get the current rendered width/height of the canvas (dictated by flex-1)
             const rect = canvas.getBoundingClientRect();
             let width = rect.width;
             
-            // Calculate the proportional height based on the new width and original image ratio
             const ratio = originalImg.height / originalImg.width;
 
-            // **CRITICAL**: Reset the canvas's intrinsic size (width/height) to match its *rendered* size 
-            // so that the internal drawing buffer matches the external display area.
             canvas.width = width;
-            canvas.height = width * ratio; // Maintain aspect ratio
+            canvas.height = width * ratio;
 
             ctx.drawImage(originalImg, 0, 0, canvas.width, canvas.height);
 
             points.forEach((p, index) => {
                 ctx.beginPath();
-                ctx.fillStyle = index === 0 ? '#3b82f6' : '#ef4444'; // Blue for P1, Red for P2
+                ctx.fillStyle = index === 0 ? '#3b82f6' : '#ef4444';
                 ctx.arc(p.displayX, p.displayY, 5, 0, Math.PI * 2); 
                 ctx.fill();
 
@@ -378,7 +390,7 @@
 
             if (points.length === 2) {
                 ctx.beginPath();
-                ctx.strokeStyle = '#a78bfa'; /* Pastel Purple Line */
+                ctx.strokeStyle = '#a78bfa';
                 ctx.lineWidth = 2;
                 ctx.moveTo(points[0].displayX, points[0].displayY); 
                 ctx.lineTo(points[1].displayX, points[1].displayY); 
@@ -400,22 +412,19 @@
 
             const canvas = side === 'left' ? canvasLeft : canvasRight;
             
-            // Use the canvas's intrinsic drawing buffer dimensions for scaling
             const scaleFactorX = originalImg.width / canvas.width; 
             const scaleFactorY = originalImg.height / canvas.height; 
 
-            // The actual pixel coordinates on the *original high-res image*
             const x = e.offsetX * scaleFactorX;
             const y = e.offsetY * scaleFactorY;
             
-            // The display coordinates on the *low-res canvas* (used for drawing the dot)
             const displayX = e.offsetX;
             const displayY = e.offsetY;
 
             if (points.length < 2) {
                 points.push({ x: x, y: y, displayX: displayX, displayY: displayY });
             } else {
-                points.length = 0; // Clear all previous points
+                points.length = 0;
                 points.push({ x: x, y: y, displayX: displayX, displayY: displayY });
             }
 
@@ -433,11 +442,9 @@
         }
 
         async function calculateStereoDimension() {
-            // Read B in cm, convert to m for the server payload
             const B_cm = parseFloat(baselineInput.value);
             const B_m = B_cm * CM_TO_M;
             
-            // Read True Dimensions in cm, convert to m for the server payload
             const W_true_cm = parseFloat(widthTrueInput.value);
             const W_true_m = W_true_cm * CM_TO_M;
             const H_true_cm = parseFloat(heightTrueInput.value);
@@ -467,9 +474,9 @@
                         R1: {x: R1.x, y: R1.y},
                         L2: {x: L2.x, y: L2.y},
                         R2: {x: R2.x, y: R2.y},
-                        B: B_m, // Send Baseline in meters
-                        W_true: W_true_m, // Send True Width in meters
-                        H_true: H_true_m  // Send True Height in meters
+                        B: B_m,
+                        W_true: W_true_m, 
+                        H_true: H_true_m  
                     })
                 });
 
@@ -477,14 +484,12 @@
 
                 if (!response.ok) throw new Error(data.error || 'Server computation failed.');
 
-                // --- Client-side conversion to cm for display ---
                 const Z_cm = data.Z_avg * M_TO_CM;
                 const dX_cm = data.dX_estimated * M_TO_CM;
                 const dY_cm = data.dY_estimated * M_TO_CM;
                 const error_W_cm = data.error_W * M_TO_CM;
                 const error_H_cm = data.error_H * M_TO_CM;
 
-                // --- CALCULATE MINIMUM ERROR (Module 1 logic: min(Ew, Eh)) ---
                 let finalError = 0.0;
                 let errorCount = 0;
                 let errors = [];
@@ -498,20 +503,16 @@
                     errorCount++;
                 }
                 
-                // If both errors were calculated, use the MINIMUM of the two (Module 1 style)
                 if (errorCount === 2) {
                     finalError = Math.min(errors[0], errors[1]);
                 } 
-                // If only one ground truth was provided, use that single error
                 else if (errorCount === 1) {
                     finalError = errors[0];
                 }
 
 
-                // --- GENERATE CONSOLE-LIKE OUTPUT (FIXED ERROR DISPLAY STYLE) ---
                 let errorLine = "";
                 if (errorCount > 0) {
-                    // Removed <span> and bold to match required style (non-bold, default color)
                     errorLine = `\nError = ${finalError.toFixed(4)} cm`;
                 }
 
@@ -543,9 +544,9 @@ ${errorLine}`;
 
 
         document.addEventListener('DOMContentLoaded', () => {
-            showModule7Tab('calib-stereo'); // Show the first tab by default
+            showModule7Tab('calib-stereo');
             updatePoseStatus("Click the button to start the stream and begin data collection.", 'STOPPED');
-            initStereoListeners(); // Initialize the new stereo logic
+            initStereoListeners(); 
         });
     </script>
 </body>

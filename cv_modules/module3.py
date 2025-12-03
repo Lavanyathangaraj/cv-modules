@@ -127,27 +127,22 @@ def process_segmentation_comparison(img_original: np.ndarray, img_aruco: np.ndar
     img_original_resized = resize_for_web(img_original)
     img_aruco_resized = cv2.resize(img_aruco, (img_original_resized.shape[1], img_original_resized.shape[0])) 
     
-    # 1. RECTIFIED SAM2 SIMULATION LOGIC: Use Adaptive Thresholding to capture the large object
     gray_original = cv2.cvtColor(img_original_resized, cv2.COLOR_BGR2GRAY)
     
-    # Use a median filter to suppress high-contrast markers
     median_filtered_gray = cv2.medianBlur(gray_original, 11)
     
-    # Apply ADAPTIVE THRESHOLDING to segment based on local contrast across the wooden object
     sam2_mask_simulated = cv2.adaptiveThreshold(
         median_filtered_gray, 
         255, 
-        cv2.ADAPTIVE_THRESH_GAUSSIAN_C, # Gaussian method for local threshold calculation
-        cv2.THRESH_BINARY_INV,         # Invert the mask
-        21,                            # Block size (neighborhood size)
-        5                              # Constant C subtracted from the mean
+        cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+        cv2.THRESH_BINARY_INV,
+        21,
+        5 
     )
     
-    # Fill holes and smooth the mask slightly (morphological close)
     kernel = np.ones((5,5),np.uint8)
     sam2_mask_simulated = cv2.morphologyEx(sam2_mask_simulated, cv2.MORPH_CLOSE, kernel)
     
-    # Create the SAM2 output visualization (Red overlay on original image)
     red_mask = cv2.merge([np.zeros_like(sam2_mask_simulated), np.zeros_like(sam2_mask_simulated), sam2_mask_simulated])
     
     sam2_output_final = cv2.addWeighted(

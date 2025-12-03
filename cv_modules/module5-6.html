@@ -39,7 +39,7 @@
             border-radius: 0.5rem;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
         }
-        /* Style for the ROI selection overlay (REMOVED: but keeping basic styling) */
+
         #selection-box {
             position: absolute;
             border: 2px dashed red;
@@ -49,7 +49,7 @@
         }
         .derivation-container {
             border: 1px solid #e5e7eb;
-            height: 700px; /* Fixed height for PDF view */
+            height: 700px; 
             overflow: hidden;
             background-color: #f9fafb;
             border-radius: 0.5rem;
@@ -92,7 +92,7 @@
 
             <div id="content-derivation" class="module-tab-content">
                 <h2 class="text-2xl font-semibold text-gray-800 mb-6">Derivation: Motion Tracking Equation</h2>
-                <p class="text-gray-600 mb-6">These derivations address the fundamental Optical Flow and Lucas-Kanade algorithms for motion estimation. The solution documents are embedded below. <strong class="text-red-600">Note: Browser compatibility for PDF embedding may vary.</strong></p>
+                <p class="text-gray-600 mb-6">These derivations address the fundamental Optical Flow and Lucas-Kanade algorithms for motion estimation. The solution documents are embedded below.</p>
                 
                 <div class="space-y-8">
                     <div class="p-4 bg-gray-50 rounded-lg border">
@@ -220,8 +220,8 @@
         const trackingLiveFeedSAM = document.getElementById('tracking-sam-feed');
 
         // State machine variables
-        let trackingState = 'STOPPED'; // STOPPED, STREAMING
-        let currentMode = 'marker'; // marker, marker-free, sam
+        let trackingState = 'STOPPED';
+        let currentMode = 'marker';
         
         // --- Status Helper ---
         function updateStatus(message, type = 'info') {
@@ -249,7 +249,6 @@
             } 
         }
         
-        // --- Core Start/Stop/Toggle Logic ---
         async function startTrackingMode(mode) {
             currentMode = mode;
             let videoElement, placeholderElement, feedContainer, streamRoute, currentBtn;
@@ -279,7 +278,7 @@
             currentBtn.disabled = true;
             updateStatus(`Initializing ${mode} tracker... (Watch for the countdown)`, 'info');
             
-            // 1. Tell the server which mode to use (CRITICAL STEP for initialization delay)
+            // 1. Tell the server which mode to use
             try {
                 const response = await fetch('/start_tracking_mode', {
                     method: 'POST',

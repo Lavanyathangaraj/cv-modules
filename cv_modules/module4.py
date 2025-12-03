@@ -2,15 +2,11 @@ import cv2
 import numpy as np
 import time
 from typing import List, Dict, Any, Tuple
-# Import necessary helpers from local utils file
+
 from .utils import resize_to_max_dim, load_images_from_files_stitch, load_image_from_file
 
-# --- CRITICAL FIX: Import ALL SIFT and RANSAC functions from sift_logic.py ---
 from .sift_logic import compute_sift, ransac_homography, match_descriptors 
-# --------------------------------------------------------------------------
 
-
-# --- Module 4: Image Stitching Logic ---
 
 def stitch_images(images: List[np.ndarray]) -> np.ndarray:
     """Stitches a list of images into a panorama using OpenCV's Stitcher."""
@@ -51,7 +47,6 @@ def process_stitch_compare(sequential_images: List[np.ndarray], reference_pano: 
         'message': message
     }
 
-# --- Module 4: SIFT Feature Extraction Logic (Calling functions from sift_logic.py) ---
 
 def process_sift_compare(img1_bgr: np.ndarray, img2_bgr: np.ndarray) -> Dict[str, Any]:
     """
@@ -98,7 +93,7 @@ def process_sift_compare(img1_bgr: np.ndarray, img2_bgr: np.ndarray) -> Dict[str
                                                         inlier_matches_opencv, 
                                                         None, flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
     
-    # --- 2. SIFT From Scratch Implementation (Using imported functions) ---
+    # --- 2. SIFT From Scratch Implementation---
     start_time_scratch = time.time()
     kp1_scratch, des1_scratch = compute_sift(img1_bgr) 
     kp2_scratch, des2_scratch = compute_sift(img2_bgr)
@@ -119,7 +114,6 @@ def process_sift_compare(img1_bgr: np.ndarray, img2_bgr: np.ndarray) -> Dict[str
             inliers_scratch = len(inliers_scratch_list)
             mask_scratch = mask_scratch_cv.flatten().astype(np.uint8)
             
-            # Draw Matches (must convert scratch KPs to cv2.KeyPoint objects for cv2.drawMatches)
             kp1_scratch_cv = [cv2.KeyPoint(x=p[0], y=p[1], size=p[2], angle=p[3] * 180 / np.pi) for p in kp1_scratch]
             kp2_scratch_cv = [cv2.KeyPoint(x=p[0], y=p[1], size=p[2], angle=p[3] * 180 / np.pi) for p in kp2_scratch]
             all_scratch_dmatches = [cv2.DMatch(m[0], m[1], 0) for m in matches_scratch_indices]

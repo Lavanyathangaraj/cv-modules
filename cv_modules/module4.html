@@ -19,9 +19,9 @@
             transition: all 0.3s ease;
         }
         .tab-button.active {
-            border-color: #a78bfa; /* Pastel Purple 400 */
-            color: #8b5cf6; /* Violet 600 */
-            background-color: #f3e8ff; /* Purple 100 */
+            border-color: #a78bfa;
+            color: #8b5cf6;
+            background-color: #f3e8ff;
         }
         /* Image Display Styling */
         .image-container {
@@ -164,30 +164,26 @@
     <script>
         // --- Tab Logic ---
         function showModule4Tab(tabId) {
-            // Hide all content divs
+
             document.querySelectorAll('.module4-tab-content').forEach(div => {
                 div.classList.add('hidden');
             });
-            // Deactivate all buttons
+
             document.querySelectorAll('.tab-button').forEach(button => {
                 button.classList.remove('active');
             });
 
-            // Show the selected content and add padding back
             const contentDiv = document.getElementById(`content-${tabId}`);
             contentDiv.classList.remove('hidden');
             
-            // Activate the selected button
             document.getElementById(`tab-${tabId}`).classList.add('active');
         }
         
-        // Initialize the correct tab
         document.addEventListener('DOMContentLoaded', () => {
             showModule4Tab('stitching');
         });
 
 
-        // --- Part 1: Image Stitching & Comparison Logic (Server Communication) ---
         const fileInputSeq = document.getElementById('image-upload-m4-seq');
         const fileInputRef = document.getElementById('image-upload-m4-ref');
         const stitchCompareButton = document.getElementById('stitch-compare-button');
@@ -228,7 +224,7 @@
 
             stitchCompareButton.disabled = true;
             
-            stitchedOutputDiv.innerHTML = '<div class="w-full text-center p-8"><svg class="animate-spin h-8 w-8 text-purple-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg><p class="text-purple-600 font-semibold mt-2">Stitching and comparison in progress on server...</p><p class="text-xs text-gray-500 mt-1">This may take a moment due to complex image processing.</p></div>';
+            stitchedOutputDiv.innerHTML = '<div class="w-full text-center p-8"><svg class="animate-spin h-8 w-8 text-purple-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg><p class="text-purple-600 font-semibold mt-2">Stitching and comparison in progress...</p><p class="text-xs text-gray-500 mt-1">This may take a moment due to complex image processing.</p></div>';
 
             const formData = new FormData();
             sequentialFiles.forEach(file => {
@@ -261,24 +257,21 @@
         function displayComparisonResult(base64Image, message) {
             stitchedOutputDiv.innerHTML = '';
             
-            // Container for the combined image and results text
             const containerDiv = document.createElement('div');
             containerDiv.className = 'w-full max-w-4xl mx-auto mt-4 grid grid-cols-1 md:grid-cols-2 gap-4';
 
-            // Left side: Combined Image (Stitched + Reference, already sized equally on server)
             const imageWrapper = document.createElement('div');
             imageWrapper.className = 'flex justify-center items-center p-3 bg-white rounded-lg shadow-xl border border-gray-200';
             
             const imgElement = document.createElement('img');
             imgElement.src = `data:image/jpeg;base64,${base64Image}`;
             imgElement.alt = "Stitched Comparison Panorama";
-            // The image is already a combined stitch/reference, setting max-width 100% will make it fit the column.
+
             imgElement.className = 'max-w-full h-auto rounded-lg'; 
             
             imageWrapper.appendChild(imgElement);
             containerDiv.appendChild(imageWrapper);
             
-            // Right side: Summary Text
             const summaryDiv = document.createElement('div');
             summaryDiv.className = 'p-4 bg-purple-50 border border-purple-300 rounded-lg text-sm text-purple-800 flex flex-col justify-center';
             summaryDiv.innerHTML = `<p class="font-semibold">Comparison Complete!</p><p>${message}</p>`;
@@ -288,7 +281,6 @@
         }
 
 
-        // --- Part 2: SIFT Comparison Logic (Server Communication) ---
 
         const fileInputSift = document.getElementById('image-upload-sift');
         const siftCompareButton = document.getElementById('sift-compare-button');

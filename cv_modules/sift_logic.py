@@ -5,9 +5,6 @@ from skimage import color, transform, filters
 from skimage.util import img_as_float
 from typing import List, Tuple, Optional, Any
 
-# ==========================================================
-# UTILITY FUNCTION (Needed for SIFT resizing)
-# ==========================================================
 
 def resize_to_max_dim(image: np.ndarray, max_dim: int) -> Tuple[np.ndarray, float]:
     """
@@ -30,9 +27,6 @@ def resize_to_max_dim(image: np.ndarray, max_dim: int) -> Tuple[np.ndarray, floa
     return resized, scale
 
 
-# ==========================================================
-# SIFT STAGE 1 & 2: Pyramid, DOG, Keypoint Detection
-# ==========================================================
 def gaussian_pyramid(img_gray_float, num_octaves=4, num_scales=3):
     pyramids = []
     current_img = img_gray_float
@@ -106,9 +100,6 @@ def detect_keypoints(dogs, threshold_ratio=0.03, edge_r=10):
                             keypoints.append((o, s, x, y))
     return keypoints
 
-# ==========================================================
-# SIFT STAGE 3 & 4: Orientation and Descriptor Computation
-# ==========================================================
 
 def assign_orientations(gp, keypoints, num_bins=36, peak_ratio=0.8):
     oriented = []
@@ -186,9 +177,6 @@ def compute_descriptor(img_float, kp, window=16, cells=4):
         
     return desc
 
-# ==========================================================
-# Main SIFT Entry Point (compute_sift)
-# ==========================================================
 def compute_sift(img_bgr_or_gray: np.ndarray) -> Tuple[List[Tuple[float, float, float, float]], np.ndarray]:
     """
     Main SIFT function that runs the entire pipeline for one image.
@@ -229,9 +217,6 @@ def compute_sift(img_bgr_or_gray: np.ndarray) -> Tuple[List[Tuple[float, float, 
 
     return keypoints_out, np.array(descriptors, dtype=np.float32)
 
-# ==========================================================
-# RANSAC and Matching (Integrated functions)
-# ==========================================================
 
 def match_descriptors(desc1: np.ndarray, desc2: np.ndarray, ratio: float = 0.75) -> List[Tuple[int, int]]:
     """Matches descriptors using Lowe's ratio test."""

@@ -117,12 +117,12 @@
                         <div class="image-container-m3">
                             <h4 class="text-sm font-medium p-2 border-b w-full text-center bg-gray-100">Gradient Magnitude</h4>
                             <img id="img-log-mag" class="result-image" src="" style="display:none;">
-                            <span class="placeholder-text">Magnitude |∇I|</span>
+                            <span class="placeholder-text">Magnitude</span>
                         </div>
                         <div class="image-container-m3">
                             <h4 class="text-sm font-medium p-2 border-b w-full text-center bg-gray-100">Gradient Angle</h4>
                             <img id="img-log-angle" class="result-image" src="" style="display:none;">
-                            <span class="placeholder-text">Angle (Orientation)</span>
+                            <span class="placeholder-text">Angle</span>
                         </div>
                          <div class="image-container-m3">
                             <h4 class="text-sm font-medium p-2 border-b w-full text-center bg-gray-100">LoG (Zero Crossings)</h4>
@@ -269,7 +269,7 @@
         const API_EDGE_CORNER = '/detect_edge_corner';
         const API_BOUNDARY = '/detect_boundary';
         const API_ARUCO = '/segment_aruco';
-        const API_SEG_COMP = '/segment_comparison'; // New comparison route
+        const API_SEG_COMP = '/segment_comparison';
 
         // --- Tab Logic ---
         function showModule3Tab(tabId) {
@@ -287,12 +287,11 @@
         document.addEventListener('DOMContentLoaded', () => {
             showModule3Tab('log'); 
             
-            // --- Initialize Event Listeners for Upload and Processing ---
             const uploadMap = [
                 { id: 'log', api: API_LOG, outputIds: ['img-log-original', 'img-log-mag', 'img-log-angle', 'img-log-log'] },
                 { id: 'edge', api: API_EDGE_CORNER, outputIds: ['img-edge-original', 'img-edge-edges', 'img-edge-corners', 'img-edge-final'] },
                 { id: 'boundary', api: API_BOUNDARY, outputIds: ['img-boundary-output'] },
-                { id: 'aruco', api: API_ARUCO, outputIds: ['img-aruco-output'] }, // MODIFIED: Only one output
+                { id: 'aruco', api: API_ARUCO, outputIds: ['img-aruco-output'] },
                 { id: 'seg-comp', api: API_SEG_COMP, outputIds: ['img-seg-comp-original', 'img-seg-comp-aruco', 'img-seg-comp-sam2'] }
             ];
 
@@ -308,7 +307,6 @@
                 }
             });
 
-            // Special listener for SEG_COMP tab (two file uploads)
             const uploadOriginal = document.getElementById('upload-seg-comp-original');
             const uploadAruco = document.getElementById('upload-seg-comp-aruco');
             const processSegCompBtn = document.getElementById('process-seg-comp');
@@ -318,7 +316,6 @@
                 const arucoFile = uploadAruco.files[0];
                 processSegCompBtn.disabled = !(originalFile && arucoFile);
                 
-                // Live preview for inputs
                 if (originalFile) displayLocalPreview(originalFile, 'seg-comp', 0);
                 if (arucoFile) displayLocalPreview(arucoFile, 'seg-comp', 1);
             }
@@ -331,7 +328,6 @@
         function updateButtonState(tab, inputElement, buttonElement) {
             if (inputElement.files.length > 0) {
                 buttonElement.disabled = false;
-                // Display local preview for the current image
                 displayLocalPreview(inputElement.files[0], tab);
             } else {
                 buttonElement.disabled = true;
@@ -345,12 +341,10 @@
                 let imgId;
                 
                 if (tabId === 'seg-comp') {
-                    // Index 0: Original, Index 1: ArUco Segmented
                     imgId = index === 0 ? 'img-seg-comp-original' : 'img-seg-comp-aruco';
                 } else if (tabId === 'log' || tabId === 'edge') {
                     imgId = `img-${tabId}-original`;
                 } else {
-                    // For Boundary/ArUco (only L1, L2, R1, R2 slots exist for preview)
                     imgId = tabId === 'boundary' ? 'img-boundary-output' : 'img-aruco-output'; 
                 }
                 
@@ -375,7 +369,7 @@
                 'log': ['img-log-original', 'img-log-mag', 'img-log-angle', 'img-log-log'],
                 'edge': ['img-edge-original', 'img-edge-edges', 'img-edge-corners', 'img-edge-final'],
                 'boundary': ['img-boundary-output'],
-                'aruco': ['img-aruco-output'], // MODIFIED list
+                'aruco': ['img-aruco-output'],
                 'seg-comp': ['img-seg-comp-original', 'img-seg-comp-aruco', 'img-seg-comp-sam2']
             };
             
@@ -391,7 +385,6 @@
                     const container = img.closest('.image-container-m3');
                     if (container) {
                         container.querySelector('.placeholder-text').style.display = 'block';
-                        // Adjust placeholder text based on the slot
                         let placeholderText = 'Processed Result';
                         if (index === 0 && (tabId === 'log' || tabId === 'edge' || tabId === 'seg-comp')) {
                             placeholderText = 'Original Image';
@@ -403,7 +396,6 @@
             });
         }
         
-        // --- Single File Processing (Tabs 1, 2, 3, 4) ---
         async function processModule3SingleFile(route, tabId, file, outputImgIds) {
             if (!file) return;
 
@@ -412,7 +404,7 @@
             
             buttonElement.disabled = true;
             statusElement.classList.remove('hidden');
-            statusElement.textContent = "Processing image on server..."; 
+            statusElement.textContent = "Processing image..."; 
             
             const formData = new FormData();
             formData.append('image', file);
@@ -429,7 +421,6 @@
                     throw new Error(data.error || 'Unknown server error.');
                 }
                 
-                // Display results (data.images contains map of base64 strings)
                 outputImgIds.forEach((id, index) => {
                     const img = document.getElementById(id);
                     let base64Data;
@@ -447,7 +438,6 @@
                     } else if (tabId === 'boundary') {
                         base64Data = data.images.output;
                     } else if (tabId === 'aruco') {
-                        // MODIFIED: Only one output expected from backend
                         if (index === 0) base64Data = data.images.segmented; 
                     }
 
@@ -470,7 +460,6 @@
             }
         }
         
-        // --- Seg Comp Processing (Tab 5 - Two Files) ---
         async function processModule3SegComp(route, tabId, originalFile, arucoFile, outputImgIds) {
             if (!originalFile || !arucoFile) return;
 
@@ -479,7 +468,7 @@
             
             buttonElement.disabled = true;
             statusElement.classList.remove('hidden');
-            statusElement.textContent = "Processing comparison on server..."; 
+            statusElement.textContent = "Processing comparison..."; 
             
             const formData = new FormData();
             formData.append('original_file', originalFile);
@@ -497,13 +486,11 @@
                     throw new Error(data.error || 'Unknown server error.');
                 }
                 
-                // Display results (Original, ArUco Mask, Simulated SAM2 Mask)
                 
                 document.getElementById('img-seg-comp-original').src = `data:image/jpeg;base64,${data.images.original}`;
                 document.getElementById('img-seg-comp-aruco').src = `data:image/jpeg;base64,${data.images.aruco_mask}`;
                 document.getElementById('img-seg-comp-sam2').src = `data:image/jpeg;base64,${data.images.sam2_mask}`;
                 
-                // Hide placeholders and show images
                 outputImgIds.forEach(id => {
                     const img = document.getElementById(id);
                     img.style.display = 'block';

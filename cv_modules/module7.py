@@ -33,7 +33,6 @@ def compute_stereo_dimension(data: Dict[str, Any]) -> Dict[str, float]:
         L2 = data['L2']
         R2 = data['R2']
         
-        # Ground truth for error calculation (received in meters)
         W_true_m = float(data.get('W_true', 0)) 
         H_true_m = float(data.get('H_true', 0)) 
     
@@ -64,9 +63,9 @@ def compute_stereo_dimension(data: Dict[str, Any]) -> Dict[str, float]:
         error_H = 0.0
         
         if W_true_m > 1e-6:
-            error_W = abs(dX - W_true_m) # Error for Estimated Width (dX)
+            error_W = abs(dX - W_true_m) 
         if H_true_m > 1e-6:
-            error_H = abs(dY - H_true_m) # Error for Estimated Height (dY) - Corrected to use H_true_m
+            error_H = abs(dY - H_true_m) 
         
         return {
             "disparity_1": round(d1, 4),
