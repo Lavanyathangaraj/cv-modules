@@ -10,7 +10,6 @@ from .utils import resize_for_web, rotate_image
 # Base directory (C:\computerVision\cv_modules)
 BASE_DIR = Path(__file__).resolve().parent
 
-# Template storage: REMOVED TEMPLATE_DATABASE
 # CRITICAL PATH: This path must match your folder structure
 TEMPLATE_FOLDER = BASE_DIR / "images" / "module2" / "objectDetection" / "templates"
 
@@ -27,7 +26,7 @@ def create_gaussian_kernel(sigma: float) -> np.ndarray:
     return gaussian_kernel
 
 
-# --- Module 2: Image Filter Simulation Logic (No Change) ---
+# --- Module 2: Image Filter Simulation Logic ---
 
 def process_image_filter(img_bgr: np.ndarray, sigma: float, K: float) -> Dict[str, np.ndarray]:
     """Applies Gaussian blur and Wiener deconvolution using Fourier Transform."""
@@ -77,7 +76,7 @@ def process_image_filter(img_bgr: np.ndarray, sigma: float, K: float) -> Dict[st
         'recovered_data': recovered_bgr
     }
 
-# --- Module 2: Object Detection Logic (MODIFIED FOR FILE SYSTEM ACCESS) ---
+# --- Module 2: Object Detection Logic ---
 
 def process_template_matching(img_bgr: np.ndarray) -> Dict[str, Any]:
     """
@@ -91,7 +90,6 @@ def process_template_matching(img_bgr: np.ndarray) -> Dict[str, Any]:
 
     all_detections = []
     
-    # Adopted parameters from the working reference code
     NMS_THRESHOLD = 0.3
     DETECTION_THRESHOLD = 0.65 
 
@@ -139,7 +137,6 @@ def process_template_matching(img_bgr: np.ndarray) -> Dict[str, Any]:
             # Match using Normalized Cross-Correlation Coefficient (TM_CCOEFF_NORMED)
             res = cv2.matchTemplate(scene_gray, template, cv2.TM_CCOEFF_NORMED)
             
-            # Find locations where the score meets the detection threshold
             loc = np.where(res >= DETECTION_THRESHOLD)
 
             for pt in zip(*loc[::-1]):
@@ -149,7 +146,7 @@ def process_template_matching(img_bgr: np.ndarray) -> Dict[str, Any]:
                 all_detections.append({
                     'box': [pt[0], pt[1], w, h],
                     'score': score,
-                    'name': name # Store the template name here
+                    'name': name
                 })
 
     # --- NMS Filtering and Final Output Generation ---
@@ -178,7 +175,7 @@ def process_template_matching(img_bgr: np.ndarray) -> Dict[str, Any]:
         detection = all_detections[idx]
         x, y, w, h = detection['box']
         score = detection['score']
-        name = detection['name'] # CRITICAL: Use the actual template name
+        name = detection['name']
 
         
         # 1. Apply Gaussian Blur to the detected ROI

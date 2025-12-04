@@ -6,7 +6,6 @@ from flask import Flask, request, jsonify, send_from_directory, Response
 from werkzeug.datastructures import FileStorage
 from typing import List, Dict, Union, Any, Tuple
 
-# --- Import Core Logic from Separate Files ---
 from . import utils 
 from . import module1
 from . import module2
@@ -42,7 +41,7 @@ def serve_static(filename):
 
 
 # ============================================================================
-# --- MODULE 1: 3D DIMENSION MEASUREMENT (/compute) ---
+# --- MODULE 1: 3D DIMENSION MEASUREMENT ---
 # ============================================================================
 
 @app.route('/compute', methods=['POST'])
@@ -57,7 +56,7 @@ def compute():
 
 
 # ============================================================================
-# --- MODULE 2: FILTER & OBJECT DETECTION (/filter, /detect_template) ---
+# --- MODULE 2: FILTER & OBJECT DETECTION ---
 # ============================================================================
 
 @app.route('/filter', methods=['POST'])
@@ -109,7 +108,7 @@ def detect_template():
 
 
 # ============================================================================
-# --- MODULE 3: EDGE & CORNER DETECTION (/detect_*, /segment_*) ---
+# --- MODULE 3: EDGE & CORNER DETECTION ---
 # ============================================================================
 
 @app.route('/detect_gradient', methods=['POST'])
@@ -217,7 +216,7 @@ def segment_comparison():
 
 
 # ============================================================================
-# --- MODULE 4: STITCHING & SIFT (/stitch_compare, /sift_compare) ---
+# --- MODULE 4: STITCHING & SIFT ---
 # ============================================================================
 
 @app.route('/stitch_compare', methods=['POST'])
@@ -270,7 +269,7 @@ def handle_sift_compare():
 
 
 # ============================================================================
-# --- MODULE 5-6: TRACKING ROUTES (VIDEO STREAMS) ---
+# --- MODULE 5-6: TRACKING ROUTES ---
 # ============================================================================
 
 @app.route('/start_tracking_mode', methods=['POST'])
@@ -331,7 +330,7 @@ def set_roi():
 
 
 # ============================================================================
-# --- MODULE 7: CALIBRATION & STEREO VISION (/compute_stereo, /video_feed_pose_hand) ---
+# --- MODULE 7: CALIBRATION & STEREO VISION ---
 # ============================================================================
 
 @app.route('/compute_stereo', methods=['POST'])
