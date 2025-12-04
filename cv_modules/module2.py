@@ -6,13 +6,11 @@ from scipy.signal import convolve2d
 from numpy.fft import fft2, ifft2 
 from pathlib import Path
 from .utils import resize_for_web, rotate_image 
-# NOTE: The resize_for_web helper remains necessary for the Filter Simulation tab.
 
 # Base directory (C:\computerVision\cv_modules)
 BASE_DIR = Path(__file__).resolve().parent
 
-# Template storage: Key is object name (filename stem), Value is the loaded template image
-TEMPLATE_DATABASE: Dict[str, np.ndarray] = {}
+# Template storage: REMOVED TEMPLATE_DATABASE
 # CRITICAL PATH: This path must match your folder structure
 TEMPLATE_FOLDER = BASE_DIR / "images" / "module2" / "objectDetection" / "templates"
 
@@ -79,120 +77,108 @@ def process_image_filter(img_bgr: np.ndarray, sigma: float, K: float) -> Dict[st
         'recovered_data': recovered_bgr
     }
 
-# --- Module 2: Object Detection Logic (MODIFIED FOR STABILITY) ---
-
-def load_templates():
-    """Dynamically loads all image files from the template folder into TEMPLATE_DATABASE."""
-    global TEMPLATE_DATABASE
-    TEMPLATE_DATABASE.clear() # Clear database on every load
-    
-    if not TEMPLATE_FOLDER.is_dir():
-        print(f"ERROR: Template folder not found at {TEMPLATE_FOLDER}. Template matching will not work without files.")
-        return
-
-    # Define common image extensions
-    image_extensions = ('*.jpg', '*.jpeg', '*.png', '*.bmp')
-    
-    for ext in image_extensions:
-        for template_path in TEMPLATE_FOLDER.glob(ext):
-            # Load template as grayscale (0)
-            img = cv2.imread(str(template_path), 0)
-            if img is not None:
-                name = template_path.stem 
-                # CRITICAL: We DO NOT resize the template aggressively here, only if it's huge, 
-                # to maintain the original pixel ratio for the current image size.
-                TEMPLATE_DATABASE[name] = img # Store the original loaded grayscale image
-
-    if not TEMPLATE_DATABASE:
-        print("FATAL: No templates loaded.")
-
+# --- Module 2: Object Detection Logic (MODIFIED FOR FILE SYSTEM ACCESS) ---
 
 def process_template_matching(img_bgr: np.ndarray) -> Dict[str, Any]:
     """
-    Performs multi-scale template matching using TM_CCOEFF_NORMED on grayscale images,
-    filters overlaps using NMS, and applies Gaussian blur on detected regions.
+    Performs multi-scale template matching directly from the file system, 
+    eliminating the need for an in-memory database.
     """
-    load_templates()
     
     scene = img_bgr.copy()
     scene_processed = scene.copy()
-    
-    # CRITICAL FIX: DO NOT resize the scene image here, use the original uploaded dimensions.
-    # The image is only resized by the browser on display.
     scene_gray = cv2.cvtColor(scene_processed, cv2.COLOR_BGR2GRAY) 
 
-    all_boxes = []
-    all_scores = []
+    all_detections = []
     
-    overall_best_match = {'score': -1.0, 'name': 'N/A'}
-
     # Adopted parameters from the working reference code
     NMS_THRESHOLD = 0.3
-    DETECTION_THRESHOLD = 0.7 # Using 0.65 as a robust working threshold
+    DETECTION_THRESHOLD = 0.65 
 
-    # Multi-Scale Parameters (Adjusted to be slightly wider than fixed 0.9-1.1 range)
-    SCALES = np.linspace(0.85, 1.15, 7)[::-1] # Wider search range for better robustness
+    # Multi-Scale Parameters 
+    SCALES = np.linspace(0.9, 1.1, 5)[::-1] 
     
-    if not TEMPLATE_DATABASE:
+    if not TEMPLATE_FOLDER.is_dir():
+        print(f"FATAL: Template folder not found at {TEMPLATE_FOLDER}.")
         return {
             'original_data': resize_for_web(img_bgr, 600),
             'detected_data': resize_for_web(img_bgr, 600),
-            'match_summary': ["Error: No templates loaded."],
+            'match_summary': [f"Error: Template folder not found."],
+        }
+    
+    template_paths = []
+    image_extensions = ('*.jpg', '*.jpeg', '*.png', '*.bmp')
+    for ext in image_extensions:
+        template_paths.extend(TEMPLATE_FOLDER.glob(ext))
+        
+    if not template_paths:
+        return {
+            'original_data': resize_for_web(img_bgr, 600),
+            'detected_data': resize_for_web(img_bgr, 600),
+            'match_summary': ["No templates found in folder."],
         }
 
-    # Iterate through all loaded templates
-    for name, base_template_gray in TEMPLATE_DATABASE.items():
+
+    # Iterate through all template files directly
+    for template_path in template_paths:
+        name = template_path.stem 
+        base_template_gray = cv2.imread(str(template_path), 0)
+        
         if base_template_gray is None: continue
 
         for scale in SCALES:
-            # Resize template for the current scale
             h_new = int(base_template_gray.shape[0] * scale)
             w_new = int(base_template_gray.shape[1] * scale)
 
             if w_new <= 0 or h_new <= 0 or w_new > scene_gray.shape[1] or h_new > scene_gray.shape[0]:
                 continue
 
-            # CRITICAL: cv2.resize ensures the template matches the specific scale against the FULL scene size
             template = cv2.resize(base_template_gray, (w_new, h_new))
             w, h = template.shape[::-1]
 
             # Match using Normalized Cross-Correlation Coefficient (TM_CCOEFF_NORMED)
             res = cv2.matchTemplate(scene_gray, template, cv2.TM_CCOEFF_NORMED)
             
-            
-            
             # Find locations where the score meets the detection threshold
             loc = np.where(res >= DETECTION_THRESHOLD)
 
             for pt in zip(*loc[::-1]):
                 score = res[pt[1], pt[0]]
-                all_boxes.append([pt[0], pt[1], w, h])
-                all_scores.append(score)
+                
+                # Store the full detection data
+                all_detections.append({
+                    'box': [pt[0], pt[1], w, h],
+                    'score': score,
+                    'name': name # Store the template name here
+                })
 
     # --- NMS Filtering and Final Output Generation ---
 
-    # --- START SUMMARY GENERATION ---
+    all_boxes_list = [d['box'] for d in all_detections]
+    all_scores = [d['score'] for d in all_detections]
+    
     match_summary = []
     
-  
-
-    if not all_boxes:
+    if not all_boxes_list:
         return {
             'original_data': resize_for_web(img_bgr, 600),
             'detected_data': resize_for_web(img_bgr, 600),
-            'match_summary': match_summary + [f"No detections found."],
+            'match_summary': [f"No detections found above threshold ({DETECTION_THRESHOLD})."],
         }
 
     # Apply NMS
-    indices = cv2.dnn.NMSBoxes(all_boxes, all_scores, DETECTION_THRESHOLD, NMS_THRESHOLD)
+    indices = cv2.dnn.NMSBoxes(all_boxes_list, all_scores, DETECTION_THRESHOLD, NMS_THRESHOLD)
     
     detection_count = len(indices)
 
     for i in indices:
         idx = i[0] if isinstance(i, np.ndarray) else i 
-        x, y, w, h = all_boxes[idx]
-        score = all_scores[idx]
-        name = "Detected Object" # Placeholder
+        
+        # Retrieve the full data for the detection that survived NMS
+        detection = all_detections[idx]
+        x, y, w, h = detection['box']
+        score = detection['score']
+        name = detection['name'] # CRITICAL: Use the actual template name
 
         
         # 1. Apply Gaussian Blur to the detected ROI
@@ -204,12 +190,14 @@ def process_template_matching(img_bgr: np.ndarray) -> Dict[str, Any]:
         # 2. Draw Bounding Box (Red color matching the reference)
         cv2.rectangle(scene_processed, (x, y), (x + w, y + h), (0, 0, 255), 2)
         cv2.putText(scene_processed, name, (x, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+        
+        match_summary.append(f"{name} detected @ {score:.4f} (Region: x={x}, y={y})")
 
-    # Final Summary: Count + Best Score + Detections
+
+    # Final Summary: Count + Detections
     final_summary = match_summary
     
-    # Add the count header at the beginning
-    final_summary.insert(1, f"Successfully detected objects.")
+    final_summary.insert(0, f"Successfully detected {detection_count} unique objects.")
     
     return {
         'original_data': resize_for_web(img_bgr, 600),
