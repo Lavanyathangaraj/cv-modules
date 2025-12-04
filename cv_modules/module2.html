@@ -152,14 +152,19 @@
                 </div>
 
             </div>
-
+            <div class="mt-8 pt-6 border-t border-gray-200">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-3">🎥 Video Demo Link</h3>
+                    <a href="https://drive.google.com/drive/folders/1xZ6WeAzjRwC87m2hUdyxYPTxBF8juYOo" target="_blank" class="text-purple-600 hover:text-purple-800 font-medium transition duration-150 underline">
+                        module 2
+                    </a>
+                </div>
         </div>
     </main>
 
     <script>
-
+        // --- FIXED SIGMA VALUE (for the server to use) ---
         const HARDCODED_SIGMA = 3.0; 
-        const HARDCODED_K = 0.0001; 
+        const HARDCODED_K = 0.0001; // <--- MODIFIED K VALUE FOR SHARPER RECOVERY
         
         // --- UI Elements (Filter Tab) ---
         const fileInputM2 = document.getElementById('image-upload-m2');
@@ -255,7 +260,7 @@
 
             processButton.disabled = true;
             statusMessage.classList.remove('hidden');
-            statusMessage.textContent = "Processing image..."; 
+            statusMessage.textContent = "Processing image on server..."; 
             
             clearProcessedResults();
 
