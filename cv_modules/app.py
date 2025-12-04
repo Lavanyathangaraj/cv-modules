@@ -26,10 +26,6 @@ module7.WORKING_CAMERA_ID = WORKING_CAMERA_ID
 if not os.path.exists(module5_6.NPZ_FOLDER):
     os.makedirs(module5_6.NPZ_FOLDER)
 
-# Load templates for Module 2 detection
-module2.load_templates()
-
-
 # ============================================================================
 # --- STATIC FILE ROUTES ---
 # ============================================================================
