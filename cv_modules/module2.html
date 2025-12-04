@@ -157,9 +157,9 @@
     </main>
 
     <script>
-
+        // --- FIXED SIGMA VALUE (for the server to use) ---
         const HARDCODED_SIGMA = 3.0; 
-        const HARDCODED_K = 0.0001; 
+        const HARDCODED_K = 0.0001; // <--- MODIFIED K VALUE FOR SHARPER RECOVERY
         
         // --- UI Elements (Filter Tab) ---
         const fileInputM2 = document.getElementById('image-upload-m2');
@@ -255,7 +255,7 @@
 
             processButton.disabled = true;
             statusMessage.classList.remove('hidden');
-            statusMessage.textContent = "Processing image..."; 
+            statusMessage.textContent = "Processing image on server..."; 
             
             clearProcessedResults();
 

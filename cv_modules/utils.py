@@ -4,6 +4,7 @@ import base64
 from werkzeug.datastructures import FileStorage
 from typing import List, Dict, Any, Tuple
 
+# --- Helper Functions from integrated_server.py ---
 
 def image_to_base64(img: np.ndarray) -> str:
     """Encodes a NumPy array image to a Base64 JPEG string."""

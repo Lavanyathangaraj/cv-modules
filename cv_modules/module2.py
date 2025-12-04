@@ -11,8 +11,9 @@ from .utils import resize_for_web, rotate_image
 # Base directory (C:\computerVision\cv_modules)
 BASE_DIR = Path(__file__).resolve().parent
 
+# Template storage: Key is object name (filename stem), Value is the loaded template image
 TEMPLATE_DATABASE: Dict[str, np.ndarray] = {}
-
+# CRITICAL PATH: This path must match your folder structure
 TEMPLATE_FOLDER = BASE_DIR / "images" / "module2" / "objectDetection" / "templates"
 
 
@@ -28,7 +29,7 @@ def create_gaussian_kernel(sigma: float) -> np.ndarray:
     return gaussian_kernel
 
 
-# --- Module 2: Image Filter Simulation Logic ---
+# --- Module 2: Image Filter Simulation Logic (No Change) ---
 
 def process_image_filter(img_bgr: np.ndarray, sigma: float, K: float) -> Dict[str, np.ndarray]:
     """Applies Gaussian blur and Wiener deconvolution using Fourier Transform."""
@@ -78,12 +79,12 @@ def process_image_filter(img_bgr: np.ndarray, sigma: float, K: float) -> Dict[st
         'recovered_data': recovered_bgr
     }
 
-# --- Module 2: Object Detection Logic---
+# --- Module 2: Object Detection Logic (MODIFIED FOR STABILITY) ---
 
 def load_templates():
     """Dynamically loads all image files from the template folder into TEMPLATE_DATABASE."""
     global TEMPLATE_DATABASE
-    TEMPLATE_DATABASE.clear() 
+    TEMPLATE_DATABASE.clear() # Clear database on every load
     
     if not TEMPLATE_FOLDER.is_dir():
         print(f"ERROR: Template folder not found at {TEMPLATE_FOLDER}. Template matching will not work without files.")
@@ -94,11 +95,13 @@ def load_templates():
     
     for ext in image_extensions:
         for template_path in TEMPLATE_FOLDER.glob(ext):
-            # Load template as grayscale
+            # Load template as grayscale (0)
             img = cv2.imread(str(template_path), 0)
             if img is not None:
                 name = template_path.stem 
-                TEMPLATE_DATABASE[name] = img
+                # CRITICAL: We DO NOT resize the template aggressively here, only if it's huge, 
+                # to maintain the original pixel ratio for the current image size.
+                TEMPLATE_DATABASE[name] = img # Store the original loaded grayscale image
 
     if not TEMPLATE_DATABASE:
         print("FATAL: No templates loaded.")
@@ -114,6 +117,8 @@ def process_template_matching(img_bgr: np.ndarray) -> Dict[str, Any]:
     scene = img_bgr.copy()
     scene_processed = scene.copy()
     
+    # CRITICAL FIX: DO NOT resize the scene image here, use the original uploaded dimensions.
+    # The image is only resized by the browser on display.
     scene_gray = cv2.cvtColor(scene_processed, cv2.COLOR_BGR2GRAY) 
 
     all_boxes = []
@@ -121,11 +126,12 @@ def process_template_matching(img_bgr: np.ndarray) -> Dict[str, Any]:
     
     overall_best_match = {'score': -1.0, 'name': 'N/A'}
 
-
+    # Adopted parameters from the working reference code
     NMS_THRESHOLD = 0.3
-    DETECTION_THRESHOLD = 0.7 
+    DETECTION_THRESHOLD = 0.7 # Using 0.65 as a robust working threshold
 
-    SCALES = np.linspace(0.85, 1.15, 7)[::-1] 
+    # Multi-Scale Parameters (Adjusted to be slightly wider than fixed 0.9-1.1 range)
+    SCALES = np.linspace(0.85, 1.15, 7)[::-1] # Wider search range for better robustness
     
     if not TEMPLATE_DATABASE:
         return {
@@ -146,11 +152,16 @@ def process_template_matching(img_bgr: np.ndarray) -> Dict[str, Any]:
             if w_new <= 0 or h_new <= 0 or w_new > scene_gray.shape[1] or h_new > scene_gray.shape[0]:
                 continue
 
+            # CRITICAL: cv2.resize ensures the template matches the specific scale against the FULL scene size
             template = cv2.resize(base_template_gray, (w_new, h_new))
             w, h = template.shape[::-1]
 
+            # Match using Normalized Cross-Correlation Coefficient (TM_CCOEFF_NORMED)
             res = cv2.matchTemplate(scene_gray, template, cv2.TM_CCOEFF_NORMED)
             
+            
+            
+            # Find locations where the score meets the detection threshold
             loc = np.where(res >= DETECTION_THRESHOLD)
 
             for pt in zip(*loc[::-1]):
@@ -158,6 +169,9 @@ def process_template_matching(img_bgr: np.ndarray) -> Dict[str, Any]:
                 all_boxes.append([pt[0], pt[1], w, h])
                 all_scores.append(score)
 
+    # --- NMS Filtering and Final Output Generation ---
+
+    # --- START SUMMARY GENERATION ---
     match_summary = []
     
   
@@ -169,6 +183,7 @@ def process_template_matching(img_bgr: np.ndarray) -> Dict[str, Any]:
             'match_summary': match_summary + [f"No detections found."],
         }
 
+    # Apply NMS
     indices = cv2.dnn.NMSBoxes(all_boxes, all_scores, DETECTION_THRESHOLD, NMS_THRESHOLD)
     
     detection_count = len(indices)
@@ -177,7 +192,7 @@ def process_template_matching(img_bgr: np.ndarray) -> Dict[str, Any]:
         idx = i[0] if isinstance(i, np.ndarray) else i 
         x, y, w, h = all_boxes[idx]
         score = all_scores[idx]
-        name = "Detected Object"
+        name = "Detected Object" # Placeholder
 
         
         # 1. Apply Gaussian Blur to the detected ROI
@@ -190,8 +205,10 @@ def process_template_matching(img_bgr: np.ndarray) -> Dict[str, Any]:
         cv2.rectangle(scene_processed, (x, y), (x + w, y + h), (0, 0, 255), 2)
         cv2.putText(scene_processed, name, (x, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
 
+    # Final Summary: Count + Best Score + Detections
     final_summary = match_summary
-
+    
+    # Add the count header at the beginning
     final_summary.insert(1, f"Successfully detected objects.")
     
     return {
